@@ -1,3 +1,5 @@
-flask
-requests
-django
+Flask
+Flask-SQLAlchemy
+Flask-Bcrypt
+Flask-Migrate
+SQLAlchemy
