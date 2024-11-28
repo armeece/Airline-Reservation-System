@@ -1,33 +1,18 @@
-from sqlalchemy import inspect
 from app import create_app, db
-from app.models import User, Flight, Booking
+from sqlalchemy import inspect
 
-# Create the Flask application
+# Create the app context
 app = create_app()
 
 with app.app_context():
-    # Check template configuration
-    print("Template folder path:", app.template_folder)
-    print("Available templates:", app.jinja_env.list_templates())
+    # Use the inspector to list table names
+    inspector = inspect(db.engine)
+    tables = inspector.get_table_names()
+    print(f"Tables in database: {tables}")
 
-    # Test database connection
-    try:
-        # Attempt a simple query to verify the connection
-        user_count = User.query.count()
-        print(f"Database connected successfully. User count: {user_count}")
-    except Exception as e:
-        print("Database connection failed:", str(e))
-
-    # Use the inspector to check if tables exist
-    try:
-        inspector = inspect(db.engine)
-        tables = inspector.get_table_names()
-
-        required_tables = ["user", "flight", "booking"]
-        for table in required_tables:
-            if table in tables:
-                print(f"Table '{table}' exists.")
-            else:
-                print(f"Table '{table}' is missing.")
-    except Exception as e:
-        print("Error checking table existence:", str(e))
+    # Optional: Print columns for each table
+    for table_name in tables:
+        print(f"Table: {table_name}")
+        columns = inspector.get_columns(table_name)
+        for column in columns:
+            print(f" - {column['name']} ({column['type']})")

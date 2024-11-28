@@ -12,13 +12,13 @@ bcrypt = Bcrypt()
 csrf = CSRFProtect()
 login_manager = LoginManager()
 
-# Configure logging
+# Configure logging globally
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def create_app():
-    app = Flask(__name__)
-    
+    app = Flask(__name__, template_folder='../templates')  # Adjust path if needed
+
     # Set configurations
     base_dir = os.path.abspath(os.path.dirname(__file__))
     app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(base_dir, '../instance/airline.db')}"
@@ -27,6 +27,9 @@ def create_app():
     app.config['SESSION_COOKIE_SECURE'] = False
     app.config['SESSION_COOKIE_HTTPONLY'] = True
     app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
+    # Log the template folder path
+    logger.info(f"Template folder path: {app.template_folder}")
 
     # Initialize extensions
     db.init_app(app)
@@ -39,6 +42,13 @@ def create_app():
     login_manager.login_view = 'main.login'
     login_manager.login_message = "Please log in to access this page."
     login_manager.login_message_category = "info"
+
+    # Define user loader for Flask-Login
+    @login_manager.user_loader
+    def load_user(user_id):
+        """Load a user by ID."""
+        from app.models import User
+        return User.query.get(int(user_id))
 
     # Import blueprints
     from app.routes import main as main_blueprint
