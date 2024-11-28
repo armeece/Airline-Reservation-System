@@ -4,3 +4,8 @@ Flask-Bcrypt
 Flask-Migrate
 SQLAlchemy
 Flask-WTF
+Flask-Login
+Werkzeug
+WTForms
+typing-extensions
+greenlet
