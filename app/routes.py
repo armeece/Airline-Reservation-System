@@ -17,7 +17,12 @@ def home():
 @main.route('/flights')
 @login_required
 def list_flights():
-    return jsonify(message=f"Flights page: List of flights for user {current_user.name}.")
+    # Test data for now
+    flights = [
+        {"id": 1, "origin": "New York", "destination": "Los Angeles", "date": "2024-11-30", "price": 300.0},
+        {"id": 2, "origin": "Chicago", "destination": "Miami", "date": "2024-12-01", "price": 200.0},
+    ]
+    return render_template('flights.html', flights=flights)
 
 @main.route('/register', methods=['GET', 'POST'])
 def register():
