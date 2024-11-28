@@ -3,3 +3,4 @@ Flask-SQLAlchemy
 Flask-Bcrypt
 Flask-Migrate
 SQLAlchemy
+Flask-WTF
