@@ -1,4 +1,5 @@
 import os
+import logging
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
@@ -10,6 +11,10 @@ db = SQLAlchemy()
 bcrypt = Bcrypt()
 csrf = CSRFProtect()
 login_manager = LoginManager()
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def create_app():
     app = Flask(__name__)
@@ -25,6 +30,7 @@ def create_app():
 
     # Initialize extensions
     db.init_app(app)
+    logger.info("SQLAlchemy initialized successfully.")
     bcrypt.init_app(app)
     csrf.init_app(app)
     login_manager.init_app(app)
@@ -38,4 +44,5 @@ def create_app():
     from app.routes import main as main_blueprint
     app.register_blueprint(main_blueprint)
 
+    logger.info("App creation complete. Extensions initialized.")
     return app
