@@ -16,13 +16,13 @@ def login():
         password = request.form.get('password')
         user = User.query.filter_by(email=email).first()
 
-        if user and user.check_password(password):
-            login_user(user)
-            flash('Login successful!', 'success')
-            return redirect(url_for('main.list_flights'))
+        if not user or not user.check_password(password):
+            flash('Invalid email or password.', 'error')
+            return redirect(url_for('main.login'))
 
-        flash('Invalid email or password. Please try again.', 'error')
-        return redirect(url_for('main.login'))
+        login_user(user)
+        flash('Welcome back!', 'success')
+        return redirect(url_for('main.list_flights'))
 
     return render_template('login.html')
 

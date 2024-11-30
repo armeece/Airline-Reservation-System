@@ -36,6 +36,7 @@ class Booking(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     flight_id = db.Column(db.Integer, db.ForeignKey('flights.id'), nullable=False)
     booking_date = db.Column(db.DateTime, default=datetime.utcnow)
+    seat_number = db.Column(db.String(10), nullable=True)  # New field for seat selection
 
     user = db.relationship('User', backref=db.backref('bookings', lazy=True))
     flight = db.relationship('Flight', backref=db.backref('bookings', lazy=True))

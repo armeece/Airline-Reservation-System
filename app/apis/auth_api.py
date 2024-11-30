@@ -13,7 +13,7 @@ def register():
     if User.query.filter_by(email=data['email']).first():
         return jsonify({"error": "User already exists"}), 400
 
-    hashed_password = generate_password_hash(data['password'], method='pbkdf2:sha256', salt_length=16)
+    hashed_password = bcrypt.generate_password_hash(data['password']).decode('utf-8')
     new_user = User(name=data['name'], email=data['email'], password_hash=hashed_password, role='customer')
     db.session.add(new_user)
     db.session.commit()

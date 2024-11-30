@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
 from app.models import Booking, Flight, db
 
-seat_selection_blueprint = Blueprint('seat_selection', __name__)
+seat_selection_blueprint = Blueprint('seat_selection', __name__)  # Define the blueprint here
 
 @seat_selection_blueprint.route('/seats/<int:flight_id>', methods=['GET'])
 @login_required
@@ -40,13 +40,11 @@ def select_seat():
     if not booking or booking.user_id != current_user.id:
         return jsonify({"error": "Booking not found or unauthorized"}), 404
 
-    # Dummy logic for seat assignment
-    # Assume each booking can have one seat, and seat_number validation is basic
-    if not 1 <= int(seat_number) <= 100:
-        return jsonify({"error": "Invalid seat number"}), 400
+    # Ensure seat number is valid and not already taken
+    if Booking.query.filter_by(flight_id=booking.flight_id, seat_number=seat_number).first():
+        return jsonify({"error": "Seat is already taken"}), 400
 
-    # Store seat number (modify model if needed)
-    booking.seat_class = seat_number  # Replace 'seat_class' with an actual seat column if required
+    booking.seat_number = seat_number
     db.session.commit()
 
     return jsonify({"message": "Seat selected successfully!"}), 200
