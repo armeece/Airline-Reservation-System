@@ -1,11 +1,11 @@
 Flask==2.2.5
-Flask-SQLAlchemy==3.0.5
+Flask-SQLAlchemy==2.5.1  # Use the last stable version compatible with Flask-Migrate
 Flask-Bcrypt==1.0.1
-Flask-Migrate==4.0.4
+Flask-Migrate==3.1.0     # Downgrade Flask-Migrate for compatibility
 Flask-WTF==1.2.2
 Flask-Login==0.6.2
 Werkzeug==2.2.3
-WTForms==3.2.1
-SQLAlchemy==2.0.36
+WTForms==3.0.1           # Pin WTForms to a version known to work with Flask-WTF
+SQLAlchemy==1.4.46       # Downgrade SQLAlchemy for compatibility
 typing-extensions==4.12.2
-greenlet==3.1.1
+greenlet==2.0.2          # Match SQLAlchemy compatibility
