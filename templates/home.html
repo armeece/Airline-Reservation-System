@@ -7,25 +7,41 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
+            margin: 0;
+            padding: 0;
             background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            text-align: center;
         }
         h1 {
             color: #333;
+            margin-bottom: 10px;
+        }
+        p {
+            color: #555;
+            margin-bottom: 20px;
         }
         .link-container {
-            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
         }
         a {
-            display: block;
-            margin: 10px 0;
+            display: inline-block;
+            padding: 10px 20px;
             text-decoration: none;
-            color: #4CAF50;
+            background-color: #4CAF50;
+            color: white;
+            border-radius: 5px;
             font-size: 18px;
+            transition: background-color 0.3s ease;
         }
         a:hover {
-            text-decoration: underline;
-            color: #45a049;
+            background-color: #45a049;
         }
     </style>
 </head>
@@ -33,9 +49,9 @@
     <h1>Welcome to the Airline Reservation System</h1>
     <p>Select an option below to get started:</p>
     <div class="link-container">
-        <a href="/login">Login</a>
-        <a href="/register">Register</a>
-        <a href="/flights">View Flights</a>
+        <a href="/login" aria-label="Login to your account">Login</a>
+        <a href="/register" aria-label="Register a new account">Register</a>
+        <a href="/flights" aria-label="View available flights">View Flights</a>
     </div>
 </body>
 </html>

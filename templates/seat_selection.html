@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seat Selection</title>
+    <link rel="stylesheet" href="styles/seat_selection.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Seat Selection</h1>
+        <p>Select your preferred seat by clicking on an available seat below.</p>
+        <div class="seat-layout" id="seat-layout" aria-label="Seat layout"></div>
+        <div class="legend">
+            <div><span class="seat available"></span> Available</div>
+            <div><span class="seat selected"></span> Selected</div>
+            <div><span class="seat reserved"></span> Reserved</div>
+        </div>
+        <button id="confirm-btn" disabled>Confirm Selection</button>
+    </div>
+
+    <script src="seat_selection.js"></script>
+</body>
+</html>

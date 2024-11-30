@@ -1,6 +1,7 @@
-from flask import Blueprint, jsonify, request, render_template, redirect, url_for, flash
+from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, login_required, logout_user, current_user
 from app.models import User, Flight, db
+from app import bcrypt
 
 main = Blueprint('main', __name__)
 
@@ -14,10 +15,15 @@ def login():
         email = request.form.get('email')
         password = request.form.get('password')
         user = User.query.filter_by(email=email).first()
+
         if user and user.check_password(password):
             login_user(user)
+            flash('Login successful!', 'success')
             return redirect(url_for('main.list_flights'))
-        return render_template('login.html', error="Invalid credentials.")
+
+        flash('Invalid email or password. Please try again.', 'error')
+        return redirect(url_for('main.login'))
+
     return render_template('login.html')
 
 @main.route('/register', methods=['GET', 'POST'])
@@ -26,16 +32,19 @@ def register():
         name = request.form.get('name')
         email = request.form.get('email')
         password = request.form.get('password')
+
         if User.query.filter_by(email=email).first():
-            return render_template('register.html', error="Email already registered!")
-        try:
-            new_user = User(name=name, email=email)
-            new_user.set_password(password)
-            db.session.add(new_user)
-            db.session.commit()
-            return redirect(url_for('main.login'))
-        except Exception as e:
-            return render_template('register.html', error=f"Error: {e}")
+            flash('Email is already registered. Please log in.', 'error')
+            return redirect(url_for('main.register'))
+
+        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+        new_user = User(name=name, email=email, password_hash=hashed_password, role='customer')
+        db.session.add(new_user)
+        db.session.commit()
+
+        flash('Account created successfully! Please log in.', 'success')
+        return redirect(url_for('main.login'))
+
     return render_template('register.html')
 
 @main.route('/flights')
@@ -47,12 +56,5 @@ def list_flights():
 @login_required
 def logout():
     logout_user()
+    flash('You have been logged out.', 'success')
     return redirect(url_for('main.home'))
-
-@main.route('/book/<int:flight_id>')
-@login_required
-def book_flight(flight_id):
-    flight = Flight.query.get(flight_id)
-    if not flight:
-        return render_template('error.html', message="Flight not found.")
-    return f"Booking flight {flight_id}!"

@@ -1,10 +1,7 @@
-from app import create_app, db
-from sqlalchemy.sql import text  # Import the text function for raw SQL
+from app import create_app  # Import the create_app function
 
+# Create the app instance
 app = create_app()
 
-with app.app_context():
-    # Clear the alembic_version table
-    db.session.execute(text("DELETE FROM alembic_version;"))
-    db.session.commit()
-    print("Alembic version table cleared.")
+# Access and print the database URI
+print("Database URI:", app.config['SQLALCHEMY_DATABASE_URI'])

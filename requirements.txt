@@ -8,4 +8,4 @@ Werkzeug==2.2.3
 WTForms==3.0.1           # Pin WTForms to a version known to work with Flask-WTF
 SQLAlchemy==1.4.46       # Downgrade SQLAlchemy for compatibility
 typing-extensions==4.12.2
-greenlet==2.0.2          # Match SQLAlchemy compatibility
+greenlet==3.1.1 # Match SQLAlchemy compatibility
