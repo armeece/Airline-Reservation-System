@@ -40,7 +40,7 @@ def select_seat():
     if not booking or booking.user_id != current_user.id:
         return jsonify({"error": "Booking not found or unauthorized"}), 404
 
-    # Ensure seat number is valid and not already taken
+    # Ensure seat number is unique and not already taken
     if Booking.query.filter_by(flight_id=booking.flight_id, seat_number=seat_number).first():
         return jsonify({"error": "Seat is already taken"}), 400
 

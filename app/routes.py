@@ -50,6 +50,9 @@ def register():
 @main.route('/flights')
 def list_flights():
     flights = Flight.query.all()
+    if not flights:
+        flash('No flights available at the moment.', 'info')
+        return render_template('flights.html', flights=[])
     return render_template('flights.html', flights=flights)
 
 @main.route('/logout')

@@ -22,6 +22,7 @@ def search_flights():
     flights = query.all()
 
     if not flights:
+        app.logger.info("No flights found for given criteria")
         return jsonify({"message": "No flights found matching the criteria"}), 404
 
     flight_list = [

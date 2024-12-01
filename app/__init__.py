@@ -1,4 +1,3 @@
-
 import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
@@ -37,6 +36,7 @@ def create_app():
 
     @login_manager.user_loader
     def load_user(user_id):
+        from app.models import User  # Avoid circular import
         return User.query.get(int(user_id))
 
     # Register blueprints
@@ -45,7 +45,7 @@ def create_app():
     from app.apis.booking_api import booking_blueprint
     from app.apis.flight_search_api import flight_search_blueprint
     from app.apis.seat_selection_api import seat_selection_blueprint
-    
+
     app.register_blueprint(main_blueprint)
     app.register_blueprint(auth_blueprint, url_prefix='/api/auth')
     app.register_blueprint(booking_blueprint, url_prefix='/api/bookings')
