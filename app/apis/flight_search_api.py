@@ -1,3 +1,6 @@
+# Original work by Dylaan Sooknanan - 11/30
+# Updates and additional functionality by Addison M - 11/30
+
 from flask import Blueprint, jsonify, request
 from app.models import Flight, db
 

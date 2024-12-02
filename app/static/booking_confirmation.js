@@ -1,3 +1,4 @@
+// #Dylaan - 11/30: 
 document.addEventListener("DOMContentLoaded", function () {
     // Get the booking ID from the URL parameters
     const bookingId = new URLSearchParams(window.location.search).get("booking_id");

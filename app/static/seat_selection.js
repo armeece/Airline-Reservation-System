@@ -1,3 +1,4 @@
+// #Dylaan - 11/30: 
 document.addEventListener("DOMContentLoaded", function () {
     const seatLayout = document.getElementById("seat-layout");
     const confirmBtn = document.getElementById("confirm-btn");
