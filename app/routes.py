@@ -1,69 +1,166 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, login_required, logout_user, current_user
-from app.models import User, Flight, db
+from bson.objectid import ObjectId
 from app import bcrypt, mongo_db
 
+# Blueprint Declaration
 main = Blueprint('main', __name__)
 
+# Helper: Simulate User for Flask-Login
+class MongoUser:
+    def __init__(self, user_data):
+        self.id = str(user_data["_id"])
+        self.email = user_data["email"]
+        self.role = user_data.get("role", "customer")
+        self.name = user_data.get("name", "Unknown")
+
+    @property
+    def is_active(self):
+        return True
+
+    @property
+    def is_authenticated(self):
+        return True
+
+    @property
+    def is_anonymous(self):
+        return False
+
+    def get_id(self):
+        return self.id
+
+    @staticmethod
+    def get(user_id):
+        user_collection = mongo_db.get_collection('users')
+        user_data = user_collection.find_one({"_id": ObjectId(user_id)})
+        return MongoUser(user_data) if user_data else None
+
+# Route: Home Page
 @main.route('/')
 def home():
-    # Addison M - 11/30: Rendered the home page
     return render_template('home.html')
 
+# Route: Login
 @main.route('/login', methods=['GET', 'POST'])
 def login():
-    # Addison M - 11/30: Implemented user login functionality
     if request.method == 'POST':
         email = request.form.get('email')
         password = request.form.get('password')
 
-        # MongoDB Usage
+        # Fetch user from MongoDB
         user_collection = mongo_db.get_collection('users')
-        user = user_collection.find_one({"email": email}) if mongo_db else None
+        user = user_collection.find_one({"email": email})
 
+        # Validate credentials
         if not user or not bcrypt.check_password_hash(user['password_hash'], password):
             flash('Invalid email or password.', 'error')
             return redirect(url_for('main.login'))
 
-        # Simulating LoginUser with SQLAlchemy User Model
-        login_user(User.query.filter_by(email=email).first())
+        # Log in user
+        login_user(MongoUser(user))
         flash('Welcome back!', 'success')
-        return redirect(url_for('main.list_flights'))
+        return redirect(url_for('main.dashboard'))
 
     return render_template('login.html')
 
+# Route: Registration
 @main.route('/register', methods=['GET', 'POST'])
 def register():
-    # Addison M - 11/30: Implemented user registration with MongoDB
     if request.method == 'POST':
         name = request.form.get('name')
         email = request.form.get('email')
         password = request.form.get('password')
 
-        # MongoDB Usage
+        # Check if email already exists
         user_collection = mongo_db.get_collection('users')
         if user_collection.find_one({"email": email}):
             flash('Email is already registered. Please log in.', 'error')
             return redirect(url_for('main.register'))
 
+        # Hash password and insert user into MongoDB
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-        user_collection.insert_one({"name": name, "email": email, "password_hash": hashed_password, "role": "customer"})
+        user_collection.insert_one({
+            "name": name,
+            "email": email,
+            "password_hash": hashed_password,
+            "role": "customer"
+        })
 
         flash('Account created successfully! Please log in.', 'success')
-        return redirect(url_for('main.login'))
+        return redirect(url_for('main.registration_success'))
 
     return render_template('register.html')
 
+# Route: Registration Success
+@main.route('/register/success')
+def registration_success():
+    return render_template('registration_success.html')
+
+# Route: User Dashboard
+@main.route('/dashboard')
+@login_required
+def dashboard():
+    return render_template('dashboard.html', user=current_user)
+
+# Route: List Flights
 @main.route('/flights')
 def list_flights():
-    # Addison M - 11/30: Displayed a list of flights using SQLAlchemy
-    flights = Flight.query.all()  # Using SQLAlchemy for flights
-    return render_template('flights.html', flights=flights)
+    flights_collection = mongo_db.get_collection('flights')
+    flights = list(flights_collection.find({}))
 
+    # Format flights for rendering
+    formatted_flights = [
+        {
+            "id": str(flight["_id"]),
+            "origin": flight["origin"],
+            "destination": flight["destination"],
+            "departure_time": flight.get("departureTime") or flight.get("departure_time"),
+            "arrival_time": flight.get("arrivalTime") or flight.get("arrival_time"),
+            "price": float(flight["price"]),
+            "capacity": int(flight["availableSeats"]),
+        }
+        for flight in flights
+    ]
+
+    return render_template('flights.html', flights=formatted_flights)
+
+# Route: Book Flight
+@main.route('/book/<flight_id>', methods=['GET', 'POST'])
+@login_required
+def book_flight(flight_id):
+    flights_collection = mongo_db.get_collection('flights')
+    flight = flights_collection.find_one({"_id": ObjectId(flight_id)})
+
+    if not flight:
+        flash('Flight not found.', 'error')
+        return redirect(url_for('main.list_flights'))
+
+    if request.method == 'POST':
+        seat_number = request.form.get('seat_number')
+
+        # Create a booking in MongoDB
+        bookings_collection = mongo_db.get_collection('bookings')
+        bookings_collection.insert_one({
+            "user_id": current_user.id,
+            "flight_id": flight_id,
+            "seat_number": seat_number
+        })
+
+        flash('Booking confirmed!', 'success')
+        return redirect(url_for('main.booking_confirmation'))
+
+    return render_template('booking.html', flight=flight)
+
+# Route: Booking Confirmation
+@main.route('/confirmation')
+@login_required
+def booking_confirmation():
+    return render_template('booking_confirmation.html')
+
+# Route: Logout
 @main.route('/logout')
 @login_required
 def logout():
-    # Addison M - 11/30: Implemented user logout functionality
     logout_user()
     flash('You have been logged out.', 'success')
-    return redirect(url_for('main.home'))
+    return redirect(url_for('main.login'))

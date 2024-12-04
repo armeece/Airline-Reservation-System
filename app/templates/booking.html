@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Flight</title>
+</head>
+<body>
+    <div class="container">
+        <h1>Book Flight</h1>
+        <p>Flight: {{ flight.origin }} to {{ flight.destination }}</p>
+        <p>Departure: {{ flight.departure_time }}</p>
+        <p>Arrival: {{ flight.arrival_time }}</p>
+        <p>Price: ${{ "%.2f"|format(flight.price) }}</p>
+        <form method="POST">
+            <label for="seat_number">Seat Number:</label>
+            <input type="text" name="seat_number" id="seat_number" required>
+            <button type="submit">Confirm Booking</button>
+        </form>
+    </div>
+</body>
+</html>

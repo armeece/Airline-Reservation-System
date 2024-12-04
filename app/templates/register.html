@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - Airline Reservation System</title>
-    <link rel="stylesheet" href="/static/styles.css">
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -72,9 +71,27 @@
             background-color: #d4edda;
             color: #155724;
         }
+        nav {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: #4CAF50;
+            padding: 10px 0;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/login">Login</a>
+    </nav>
     <div class="form-container">
         <h1>Register</h1>
         {% with messages = get_flashed_messages(with_categories=true) %}

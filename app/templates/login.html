@@ -58,9 +58,27 @@
         a:hover {
             text-decoration: underline;
         }
+        nav {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: #4CAF50;
+            padding: 10px 0;
+        }
+        nav a {
+            color: white;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/register">Register</a>
+    </nav>
     <div class="container">
         <h1>Login</h1>
         {% if error %}
