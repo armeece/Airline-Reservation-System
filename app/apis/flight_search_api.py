@@ -1,7 +1,5 @@
-# Original work by Dylaan Sooknanan - 11/30
-# Updates and additional functionality by Addison M - 11/30
-
 from flask import Blueprint, jsonify, request
+from bson.objectid import ObjectId
 from app import mongo_db
 
 # ===================================
@@ -18,9 +16,9 @@ def search_flights():
     Search for flights based on origin, destination, and date.
     """
     # Retrieve search parameters from the request
-    origin = request.args.get('origin', "").lower()
-    destination = request.args.get('destination', "").lower()
-    date = request.args.get('date')  # Format: YYYY-MM-DD
+    origin = request.args.get('origin', "").strip()
+    destination = request.args.get('destination', "").strip()
+    departure_date = request.args.get('date')  # Format: YYYY-MM-DD
 
     # MongoDB flight collection
     flights_collection = mongo_db.get_collection('flights')
@@ -28,11 +26,11 @@ def search_flights():
     # Build the query dynamically
     query = {}
     if origin:
-        query["origin"] = {"$regex": origin, "$options": "i"}
+        query["origin"] = {"$regex": f"^{origin}$", "$options": "i"}  # Case-insensitive exact match
     if destination:
-        query["destination"] = {"$regex": destination, "$options": "i"}
-    if date:
-        query["departureDate"] = date
+        query["destination"] = {"$regex": f"^{destination}$", "$options": "i"}  # Case-insensitive exact match
+    if departure_date:
+        query["departureDate"] = departure_date
 
     # Query MongoDB for flights matching criteria
     flights = list(flights_collection.find(query))
@@ -43,16 +41,46 @@ def search_flights():
 
     # Format the response
     flight_list = [
-        {
-            "id": str(flight["_id"]),
-            "origin": flight["origin"],
-            "destination": flight["destination"],
-            "departure_date": flight["departureDate"],
-            "departure_time": flight["departureTime"],
-            "arrival_time": flight["arrivalTime"],
-            "price": flight["price"],
-            "capacity": flight["availableSeats"],
-        }
-        for flight in flights
-    ]
+    {
+        "id": str(flight["_id"]),  # MongoDB `_id` converted to string
+        "origin": flight["origin"],
+        "destination": flight["destination"],
+        "departure_date": flight.get("departureDate"),
+        "departure_time": flight.get("departureTime"),
+        "arrival_time": flight.get("arrivalTime"),
+        "price": flight.get("price"),
+        "capacity": flight.get("availableSeats"),
+    }
+    for flight in flights
+]
     return jsonify({"flights": flight_list}), 200
+
+# ===================================
+# Get Flight Details by ID
+# ===================================
+@flight_search_blueprint.route('/flights/<flight_id>', methods=['GET'])
+def get_flight_details(flight_id):
+    """
+    Retrieve flight details by flight ID.
+    """
+    flights_collection = mongo_db.get_collection('flights')
+
+    # Fetch the flight by ID
+    flight = flights_collection.find_one({"_id": ObjectId(flight_id)})
+    if not flight:
+        return jsonify({"message": "Flight not found"}), 404
+
+    # Format the response
+    flight_details = {
+        "id": str(flight["_id"]),
+        "origin": flight["origin"],
+        "destination": flight["destination"],
+        "departure_date": flight.get("departureDate"),
+        "departure_time": flight.get("departureTime") or flight.get("departure_time"),
+        "arrival_time": flight.get("arrivalTime") or flight.get("arrival_time"),
+        "price": float(flight["price"]),
+        "capacity": int(flight["availableSeats"]),
+        "airline": flight.get("airline"),
+        "class": flight.get("class"),
+    }
+    return jsonify(flight_details), 200

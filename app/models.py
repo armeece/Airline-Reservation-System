@@ -1,90 +1,102 @@
-from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
+from bson.objectid import ObjectId
 from datetime import datetime
-
-# Initialize SQLAlchemy
-db = SQLAlchemy()
-
-# ===================================
-# User-Role Association Table
-# ===================================
-user_roles = db.Table(
-    'user_roles',
-    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
-    db.Column('role_id', db.Integer, db.ForeignKey('roles.id'), primary_key=True)
-)
+from app import mongo_db
 
 # ===================================
 # Role Model
 # ===================================
-class Role(db.Model):
-    __tablename__ = "roles"
+class Role:
+    def __init__(self, role_data):
+        self.id = str(role_data.get("_id"))
+        self.name = role_data.get("name")
 
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), unique=True, nullable=False)
-
-    # Define many-to-many relationship with User
-    users = db.relationship(
-        'User',
-        secondary=user_roles,
-        back_populates='roles'
-    )
+    @staticmethod
+    def get_roles_for_user(user_id):
+        roles_collection = mongo_db.get_collection("roles")
+        user_roles = roles_collection.find({"user_id": user_id})
+        return [Role(role) for role in user_roles]
 
 # ===================================
 # User Model
 # ===================================
-class User(UserMixin, db.Model):
-    __tablename__ = "users"
+class User(UserMixin):
+    def __init__(self, user_data):
+        self.id = str(user_data["_id"])
+        self.username = user_data.get("username", "Unknown")
+        self.email = user_data["email"]
+        self.password_hash = user_data["password_hash"]
+        self.created_at = user_data.get("created_at", datetime.utcnow())
+        self.roles = Role.get_roles_for_user(self.id)
 
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(128), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    @staticmethod
+    def get_user_by_email(email):
+        users_collection = mongo_db.get_collection("users")
+        user_data = users_collection.find_one({"email": email})
+        return User(user_data) if user_data else None
 
-    # Define many-to-many relationship with Role
-    roles = db.relationship(
-        'Role',
-        secondary=user_roles,
-        back_populates='users'
-    )
-
-# ===================================
-# Permission Model
-# ===================================
-class Permission(db.Model):
-    __tablename__ = "permissions"
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False, unique=True)
-    description = db.Column(db.String(255), nullable=True)
+    @staticmethod
+    def get_user_by_id(user_id):
+        users_collection = mongo_db.get_collection("users")
+        user_data = users_collection.find_one({"_id": ObjectId(user_id)})
+        return User(user_data) if user_data else None
 
 # ===================================
 # Flight Model
 # ===================================
-class Flight(db.Model):
-    __tablename__ = "flights"
+class Flight:
+    def __init__(self, flight_data):
+        self.id = str(flight_data["_id"])
+        self.origin = flight_data["origin"]
+        self.destination = flight_data["destination"]
+        self.departure_time = flight_data.get("departureTime") or flight_data.get("departure_time")
+        self.arrival_time = flight_data.get("arrivalTime") or flight_data.get("arrival_time")
+        self.price = float(flight_data["price"])
+        self.capacity = int(flight_data["availableSeats"])
 
-    id = db.Column(db.Integer, primary_key=True)
-    origin = db.Column(db.String(120), nullable=False)
-    destination = db.Column(db.String(120), nullable=False)
-    departure_time = db.Column(db.DateTime, nullable=False)
-    arrival_time = db.Column(db.DateTime, nullable=False)
-    price = db.Column(db.Float, nullable=False)
-    capacity = db.Column(db.Integer, nullable=False)
+    @staticmethod
+    def get_all_flights():
+        flights_collection = mongo_db.get_collection("flights")
+        flight_data = flights_collection.find({})
+        return [Flight(flight) for flight in flight_data]
+
+    @staticmethod
+    def get_flight_by_id(flight_id):
+        flights_collection = mongo_db.get_collection("flights")
+        flight_data = flights_collection.find_one({"_id": ObjectId(flight_id)})
+        return Flight(flight_data) if flight_data else None
 
 # ===================================
 # Booking Model
 # ===================================
-class Booking(db.Model):
-    __tablename__ = "bookings"
+class Booking:
+    def __init__(self, booking_data):
+        self.id = str(booking_data["_id"])
+        self.user_id = booking_data["user_id"]
+        self.flight_id = booking_data["flight_id"]
+        self.seat_number = booking_data["seat_number"]
+        self.booking_time = booking_data.get("booking_time", datetime.utcnow())
 
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    flight_id = db.Column(db.Integer, db.ForeignKey('flights.id'), nullable=False)
-    seat_number = db.Column(db.String(10), nullable=False)
-    booking_time = db.Column(db.DateTime, default=datetime.utcnow)
+    @staticmethod
+    def create_booking(user_id, flight_id, seat_number):
+        bookings_collection = mongo_db.get_collection("bookings")
+        booking_data = {
+            "user_id": user_id,
+            "flight_id": flight_id,
+            "seat_number": seat_number,
+            "booking_time": datetime.utcnow(),
+        }
+        result = bookings_collection.insert_one(booking_data)
+        return str(result.inserted_id)
 
-    # Define relationships
-    user = db.relationship('User', backref=db.backref('bookings', lazy='dynamic'))
-    flight = db.relationship('Flight', backref=db.backref('bookings', lazy='dynamic'))
+    @staticmethod
+    def get_bookings_for_user(user_id):
+        bookings_collection = mongo_db.get_collection("bookings")
+        bookings = bookings_collection.find({"user_id": user_id})
+        return [Booking(booking) for booking in bookings]
+
+    @staticmethod
+    def get_booking_by_id(booking_id):
+        bookings_collection = mongo_db.get_collection("bookings")
+        booking_data = bookings_collection.find_one({"_id": ObjectId(booking_id)})
+        return Booking(booking_data) if booking_data else None

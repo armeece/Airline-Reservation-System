@@ -138,16 +138,12 @@ def book_flight(flight_id):
     if request.method == 'POST':
         seat_number = request.form.get('seat_number')
 
-        # Create a booking in MongoDB
-        bookings_collection = mongo_db.get_collection('bookings')
-        bookings_collection.insert_one({
-            "user_id": current_user.id,
-            "flight_id": flight_id,
-            "seat_number": seat_number
-        })
+        if not seat_number:
+            flash('Please select a valid seat number.', 'error')
+            return redirect(url_for('main.book_flight', flight_id=flight_id))
 
-        flash('Booking confirmed!', 'success')
-        return redirect(url_for('main.booking_confirmation'))
+        # Redirect to the payment page with the seat number
+        return redirect(url_for('main.payment', flight_id=flight_id, seat_number=seat_number))
 
     return render_template('booking.html', flight=flight)
 
@@ -164,3 +160,48 @@ def logout():
     logout_user()
     flash('You have been logged out.', 'success')
     return redirect(url_for('main.login'))
+
+# Route: Payment Page
+@main.route('/payment/<flight_id>', methods=['GET', 'POST'])
+@login_required
+def payment(flight_id):
+    flights_collection = mongo_db.get_collection('flights')
+    bookings_collection = mongo_db.get_collection('bookings')
+    flight = flights_collection.find_one({"_id": ObjectId(flight_id)})
+    seat_number = request.args.get('seat_number')  # Fetch seat number from query parameters
+
+    if not flight:
+        flash('Flight not found.', 'error')
+        return redirect(url_for('main.list_flights'))
+
+    if request.method == 'POST':
+        card_number = request.form.get('card_number')
+        expiry_date = request.form.get('expiry_date')
+        cvv = request.form.get('cvv')
+
+        # Basic validation for all fields
+        if not card_number or not expiry_date or not cvv or not seat_number:
+            flash('All fields (seat number and payment details) are required.', 'error')
+            return redirect(url_for('main.payment', flight_id=flight_id, seat_number=seat_number))
+
+        # Check if the seat is still available
+        existing_booking = bookings_collection.find_one({
+            "flight_id": flight_id,
+            "seat_number": seat_number
+        })
+        if existing_booking:
+            flash('Seat is already booked. Please choose another seat.', 'error')
+            return redirect(url_for('main.book_flight', flight_id=flight_id))
+
+        # Insert booking and confirm payment
+        bookings_collection.insert_one({
+            "user_id": current_user.id,
+            "flight_id": flight_id,
+            "seat_number": seat_number,
+            "payment_status": "Confirmed"
+        })
+
+        flash('Payment successful! Your booking is confirmed.', 'success')
+        return redirect(url_for('main.booking_confirmation'))
+
+    return render_template('payment.html', flight=flight, seat_number=seat_number)

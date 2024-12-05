@@ -1,9 +1,7 @@
-# Original work by Dylaan Sooknanan - 11/30
-# Updates and additional functionality by Addison M - 11/30
-
 from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
-from app.models import Booking, Flight, db
+from bson.objectid import ObjectId
+from app import mongo_db
 
 # ===================================
 # Blueprint Initialization
@@ -22,27 +20,33 @@ def create_booking():
     data = request.get_json()
 
     flight_id = data.get('flight_id')
-    if not flight_id:
-        return jsonify({"error": "Flight ID is required"}), 400
+    seat_number = data.get('seat_number')
+    if not flight_id or not seat_number:
+        return jsonify({"error": "Flight ID and seat number are required"}), 400
 
     # Fetch the flight using the given flight ID
-    flight = Flight.query.get(flight_id)
+    flights_collection = mongo_db.get_collection('flights')
+    flight = flights_collection.find_one({"_id": ObjectId(flight_id)})
     if not flight:
         return jsonify({"error": "Flight not found"}), 404
 
-    # Optional: Prevent duplicate bookings
-    existing_booking = Booking.query.filter_by(user_id=current_user.id, flight_id=flight_id).first()
+    # Prevent duplicate bookings
+    bookings_collection = mongo_db.get_collection('bookings')
+    existing_booking = bookings_collection.find_one({
+        "user_id": current_user.id,
+        "flight_id": flight_id
+    })
     if existing_booking:
         return jsonify({"error": "You have already booked this flight"}), 400
 
-    # Create and save the new booking
-    new_booking = Booking(
-        user_id=current_user.id,
-        flight_id=flight_id,
-        booking_time=db.func.now()  # Automatically sets the booking time
-    )
-    db.session.add(new_booking)
-    db.session.commit()
+    # Create and save the new booking in MongoDB
+    new_booking = {
+        "user_id": current_user.id,
+        "flight_id": flight_id,
+        "seat_number": seat_number,
+        "booking_time": flight.get("departureTime")  # Defaulting to departure time for simplicity
+    }
+    bookings_collection.insert_one(new_booking)
 
     return jsonify({"message": "Booking created successfully!"}), 201
 
@@ -55,44 +59,56 @@ def get_bookings():
     """
     Retrieve all bookings for the logged-in user.
     """
-    bookings = Booking.query.filter_by(user_id=current_user.id).all()
+    bookings_collection = mongo_db.get_collection('bookings')
+    flights_collection = mongo_db.get_collection('flights')
 
-    # Handle cases where the user has no bookings
+    # Fetch bookings for the current user
+    bookings = list(bookings_collection.find({"user_id": current_user.id}))
+
     if not bookings:
         return jsonify({"message": "No bookings found"}), 404
 
     # Format bookings data for response
-    booking_list = [
-        {
-            "id": booking.id,
-            "flight_id": booking.flight_id,
+    booking_list = []
+    for booking in bookings:
+        flight = flights_collection.find_one({"_id": ObjectId(booking["flight_id"])})
+        if not flight:
+            continue  # Skip if the flight no longer exists
+
+        booking_list.append({
+            "id": str(booking["_id"]),
+            "flight_id": booking["flight_id"],
+            "seat_number": booking["seat_number"],
             "flight": {
-                "origin": booking.flight.origin,
-                "destination": booking.flight.destination,
-                "departure_time": booking.flight.departure_time.isoformat(),
-                "arrival_time": booking.flight.arrival_time.isoformat(),
-                "price": booking.flight.price
+                "origin": flight["origin"],
+                "destination": flight["destination"],
+                "departure_time": flight.get("departureTime") or flight.get("departure_time"),
+                "arrival_time": flight.get("arrivalTime") or flight.get("arrival_time"),
+                "price": float(flight["price"])
             },
-            "booking_time": booking.booking_time.isoformat()
-        } for booking in bookings
-    ]
+            "booking_time": booking.get("booking_time")  # Stored as is from booking
+        })
+
     return jsonify({"bookings": booking_list}), 200
 
 # ===================================
 # Delete a Booking (Optional Feature)
 # ===================================
-@booking_blueprint.route('/bookings/<int:booking_id>', methods=['DELETE'])
+@booking_blueprint.route('/bookings/<booking_id>', methods=['DELETE'])
 @login_required
 def delete_booking(booking_id):
     """
     Delete a booking for the current user.
     """
-    booking = Booking.query.filter_by(id=booking_id, user_id=current_user.id).first()
+    bookings_collection = mongo_db.get_collection('bookings')
 
-    if not booking:
-        return jsonify({"error": "Booking not found"}), 404
+    # Delete the booking from MongoDB
+    result = bookings_collection.delete_one({
+        "_id": ObjectId(booking_id),
+        "user_id": current_user.id
+    })
 
-    db.session.delete(booking)
-    db.session.commit()
+    if result.deleted_count == 0:
+        return jsonify({"error": "Booking not found or you are not authorized"}), 404
 
     return jsonify({"message": "Booking deleted successfully"}), 200

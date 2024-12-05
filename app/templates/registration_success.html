@@ -3,51 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registration Successful</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background-color: #f4f4f4;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .container {
-            text-align: center;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
-        h1 {
-            font-size: 24px;
-            color: #4CAF50;
-        }
-        p {
-            font-size: 18px;
-            margin-top: 10px;
-        }
-        a {
-            display: inline-block;
-            margin-top: 20px;
-            text-decoration: none;
-            background: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border-radius: 5px;
-        }
-        a:hover {
-            background: #45a049;
-        }
-    </style>
+    <title>Registration Success</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <div class="container">
-        <h1>Registration Successful!</h1>
-        <p>You can now <a href="{{ url_for('main.login') }}">log in</a> to your account.</p>
-    </div>
+    <header>
+        <nav>
+            <a href="{{ url_for('main.home') }}">Home</a>
+            <a href="{{ url_for('main.login') }}">Login</a>
+        </nav>
+        <h1>Registration Successful</h1>
+    </header>
+    <main>
+        <p>Your account has been created successfully.</p>
+        <a href="{{ url_for('main.login') }}">Log in here</a>
+    </main>
 </body>
 </html>

@@ -3,39 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Available Flights</title>
+    <title>Flights</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <h1>Available Flights</h1>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Origin</th>
-                <th>Destination</th>
-                <th>Departure</th>
-                <th>Arrival</th>
-                <th>Price</th>
-                <th>Capacity</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
+    <header>
+        <nav>
+            <a href="{{ url_for('main.home') }}">Home</a>
+            <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+        </nav>
+        <h1>Available Flights</h1>
+    </header>
+    <main>
+        <ul>
             {% for flight in flights %}
-            <tr>
-                <td>{{ flight.id }}</td>
-                <td>{{ flight.origin }}</td>
-                <td>{{ flight.destination }}</td>
-                <td>{{ flight.departure_time }}</td>
-                <td>{{ flight.arrival_time }}</td>
-                <td>{{ flight.price }}</td>
-                <td>{{ flight.capacity }}</td>
-                <td>
+                <li>
+                    {{ flight.origin }} to {{ flight.destination }} | Departure: {{ flight.departure_time }} |
+                    Price: ${{ flight.price }}
                     <a href="{{ url_for('main.book_flight', flight_id=flight.id) }}">Book</a>
-                </td>
-            </tr>
+                </li>
+            {% else %}
+                <li>No flights found.</li>
             {% endfor %}
-        </tbody>
-    </table>
+        </ul>
+    </main>
 </body>
 </html>
