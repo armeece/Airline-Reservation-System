@@ -10,3 +10,4 @@ SQLAlchemy==1.4.46       # Downgrade SQLAlchemy for compatibility
 typing-extensions==4.12.2
 greenlet==3.1.1 # Match SQLAlchemy compatibility
 pymongo==3.12
+python-dotenv==1.0.0
