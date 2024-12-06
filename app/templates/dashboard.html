@@ -17,11 +17,32 @@
     </header>
     <main>
         <h2>Your Bookings</h2>
-        {% for booking in bookings %}
-            <p>Flight: {{ booking.flight.origin }} to {{ booking.flight.destination }} | Seat: {{ booking.seat_number }}</p>
+        {% if bookings %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Flight</th>
+                        <th>Seat</th>
+                        <th>Departure</th>
+                        <th>Arrival</th>
+                        <th>Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in bookings %}
+                        <tr>
+                            <td>{{ booking.flight.origin }} to {{ booking.flight.destination }}</td>
+                            <td>{{ booking.seat_number }}</td>
+                            <td>{{ booking.flight.departure_time }}</td>
+                            <td>{{ booking.flight.arrival_time }}</td>
+                            <td>${{ booking.flight.price }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         {% else %}
             <p>No bookings found.</p>
-        {% endfor %}
+        {% endif %}
     </main>
 </body>
 </html>

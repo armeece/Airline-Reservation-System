@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const confirmBtn = document.getElementById("confirm-btn");
     let selectedSeat = null;
 
-    // Replace this with the actual flight ID dynamically
+    // Get flight ID from the URL
     const flightId = new URLSearchParams(window.location.search).get("flight_id");
 
     if (!flightId) {
@@ -14,12 +14,13 @@ document.addEventListener("DOMContentLoaded", function () {
         return;
     }
 
+    // Disable the confirm button initially
+    confirmBtn.disabled = true;
+
     // Fetch seat availability
     fetch(`/api/seats/${flightId}`)
         .then((response) => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             return response.json();
         })
         .then((data) => {
@@ -47,7 +48,6 @@ document.addEventListener("DOMContentLoaded", function () {
                         seat.classList.add("reserved");
                     } else {
                         seat.addEventListener("click", () => {
-                            // Deselect previously selected seat
                             document.querySelectorAll(".seat.selected").forEach((el) => el.classList.remove("selected"));
                             seat.classList.add("selected");
                             selectedSeat = seatNumber;
@@ -75,18 +75,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
         fetch("/api/seats/reserve", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                flight_id: flightId,
-                seat_number: selectedSeat,
-            }),
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ flight_id: flightId, seat_number: selectedSeat }),
         })
             .then((response) => {
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 return response.json();
             })
             .then((data) => {

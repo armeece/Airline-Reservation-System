@@ -18,19 +18,21 @@
     </header>
     <main>
         {% if flight %}
-            <h2>Flight Details</h2>
-            <p><strong>Origin:</strong> {{ flight['origin'] }}</p>
-            <p><strong>Destination:</strong> {{ flight['destination'] }}</p>
-            <p><strong>Departure Time:</strong> {{ flight['departure_time'] }}</p>
-            <p><strong>Price:</strong> ${{ flight['price'] }}</p>
+            <section>
+                <h2>Flight Details</h2>
+                <p><strong>Origin:</strong> {{ flight['origin'] }}</p>
+                <p><strong>Destination:</strong> {{ flight['destination'] }}</p>
+                <p><strong>Departure Time:</strong> {{ flight['departure_time'] }}</p>
+                <p><strong>Price:</strong> ${{ flight['price'] }}</p>
+            </section>
             <form action="{{ url_for('main.book_flight', flight_id=flight['id']) }}" method="post">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <label for="seat_number">Seat Number:</label>
-                <input type="text" id="seat_number" name="seat_number" required>
-                <button type="submit">Book Now</button>
+                <input type="text" id="seat_number" name="seat_number" placeholder="Enter seat number" required>
+                <button class="btn" type="submit">Book Now</button>
             </form>
         {% else %}
-            <p>Flight details not available.</p>
+            <p>No flight details available.</p>
         {% endif %}
     </main>
 </body>

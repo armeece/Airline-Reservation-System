@@ -2,17 +2,15 @@ import os
 import logging
 import signal
 import sys
-from app import create_app, db
-from flask_migrate import Migrate
+from app import create_app
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 app = create_app()
-migrate = Migrate(app, db)
 
 def graceful_exit(signum, frame):
-    app.logger.info("Shutting down gracefully...")
+    logger.info("Shutting down gracefully...")
     sys.exit(0)
 
 signal.signal(signal.SIGINT, graceful_exit)

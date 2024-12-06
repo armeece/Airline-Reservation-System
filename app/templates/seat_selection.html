@@ -15,14 +15,13 @@
         </nav>
         <h1>Seat Selection</h1>
     </header>
-    <main>
-        <form action="{{ url_for('main.book_flight', flight_id=flight_id) }}" method="post">
-            {{ csrf_field() }}
+    <main class="centered">
+        <form action="{{ url_for('main.select_seat', flight_id=flight_id) }}" method="post" class="form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <label for="seat_number">Select Seat Number:</label>
-            <input type="number" id="seat_number" name="seat_number" required>
-            <button type="submit">Book Now</button>
+            <input type="number" id="seat_number" name="seat_number" placeholder="Enter seat number" required>
+            <button class="btn" type="submit">Confirm Seat</button>
         </form>
     </main>
-    <script src="{{ url_for('static', filename='seat_selection.js') }}"></script>
 </body>
 </html>

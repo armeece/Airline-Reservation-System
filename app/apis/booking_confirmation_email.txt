@@ -1,0 +1,14 @@
+Subject: Booking Confirmation - Flight {{ flight_number }}
+
+Dear {{ user_name }},
+
+Your booking for flight {{ flight_number }} has been confirmed. Here are the details:
+- Flight: {{ flight_number }}
+- Date: {{ flight_date }}
+- Seat: {{ seat }}
+- Total Price: ${{ price }}
+
+Thank you for choosing our airline.
+
+Best regards,
+Airline Reservation System

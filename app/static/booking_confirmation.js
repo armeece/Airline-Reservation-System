@@ -2,35 +2,34 @@
 // Updates and improvements by Addison M - 12/04
 
 document.addEventListener("DOMContentLoaded", function () {
+    const bookingDetails = document.getElementById("booking-details");
+
     // Get the booking ID from the URL parameters
     const bookingId = new URLSearchParams(window.location.search).get("booking_id");
 
-    // Display an error message if booking ID is missing
     if (!bookingId) {
-        document.getElementById("booking-details").innerHTML = "<p><strong>Error:</strong> Booking ID is missing.</p>";
+        bookingDetails.innerHTML = "<p><strong>Error:</strong> Booking ID is missing.</p>";
         return;
     }
 
-    // Fetch booking details from the backend
+    // Show loading indicator
+    bookingDetails.innerHTML = "<p>Loading booking details...</p>";
+
+    // Fetch booking details
     fetch("/api/bookings/confirm", {
         method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ booking_id: bookingId })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ booking_id: bookingId }),
     })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
+        .then((response) => {
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             return response.json();
         })
-        .then(data => {
+        .then((data) => {
             if (data.error) {
-                document.getElementById("booking-details").innerHTML = `<p><strong>Error:</strong> ${data.error}</p>`;
+                bookingDetails.innerHTML = `<p><strong>Error:</strong> ${data.error}</p>`;
             } else {
-                // Display booking details on the page
-                document.getElementById("booking-details").innerHTML = `
+                bookingDetails.innerHTML = `
                     <h2>Booking Confirmation</h2>
                     <p><strong>Booking ID:</strong> ${data.booking_id}</p>
                     <p><strong>Passenger Name:</strong> ${data.passenger_name}</p>
@@ -41,8 +40,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 `;
             }
         })
-        .catch(error => {
-            document.getElementById("booking-details").innerHTML = `<p><strong>Error:</strong> Could not fetch booking details. Please try again later.</p>`;
+        .catch((error) => {
+            bookingDetails.innerHTML = "<p><strong>Error:</strong> Could not fetch booking details. Please try again later.</p>";
             console.error("Error fetching booking details:", error);
         });
 });

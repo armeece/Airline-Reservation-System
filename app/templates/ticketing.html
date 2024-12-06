@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Ticketing</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="{{ url_for('main.home') }}">Home</a>
+            <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+        </nav>
+        <h1>Submit a Ticket</h1>
+    </header>
+    <main class="centered">
+        <form id="ticketForm" class="form">
+            <label for="userId">User ID:</label>
+            <input type="text" id="userId" placeholder="Enter your User ID" required>
+            
+            <label for="subject">Subject:</label>
+            <input type="text" id="subject" placeholder="Enter the subject" required>
+            
+            <label for="message">Message:</label>
+            <textarea id="message" placeholder="Enter your message" required></textarea>
+            
+            <button class="btn" type="submit">Submit Ticket</button>
+        </form>
+    </main>
+    <script>
+        document.getElementById('ticketForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const userId = document.getElementById('userId').value;
+            const subject = document.getElementById('subject').value;
+            const message = document.getElementById('message').value;
+
+            const response = await fetch('/api/tickets', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ user_id: userId, subject, message })
+            });
+
+            const result = await response.json();
+            if (response.ok) {
+                alert('Ticket submitted successfully!');
+                document.getElementById('ticketForm').reset();
+            } else {
+                alert(`Error: ${result.error}`);
+            }
+        });
+    </script>
+</body>
+</html>

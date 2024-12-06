@@ -3,9 +3,6 @@ from bson.objectid import ObjectId
 from datetime import datetime
 from app import mongo_db
 
-# ===================================
-# Role Model
-# ===================================
 class Role:
     def __init__(self, role_data):
         self.id = str(role_data.get("_id"))
@@ -17,9 +14,6 @@ class Role:
         user_roles = roles_collection.find({"user_id": user_id})
         return [Role(role) for role in user_roles]
 
-# ===================================
-# User Model
-# ===================================
 class User(UserMixin):
     def __init__(self, user_data):
         self.id = str(user_data["_id"])
@@ -41,9 +35,6 @@ class User(UserMixin):
         user_data = users_collection.find_one({"_id": ObjectId(user_id)})
         return User(user_data) if user_data else None
 
-# ===================================
-# Flight Model
-# ===================================
 class Flight:
     def __init__(self, flight_data):
         self.id = str(flight_data["_id"])
@@ -66,9 +57,6 @@ class Flight:
         flight_data = flights_collection.find_one({"_id": ObjectId(flight_id)})
         return Flight(flight_data) if flight_data else None
 
-# ===================================
-# Booking Model
-# ===================================
 class Booking:
     def __init__(self, booking_data):
         self.id = str(booking_data["_id"])

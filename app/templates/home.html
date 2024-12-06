@@ -8,12 +8,15 @@
 </head>
 <body>
     <header>
-        <nav>
-            <a href="{{ url_for('main.list_flights') }}">Flights</a>
-            <a href="{{ url_for('main.login') }}">Login</a>
-            <a href="{{ url_for('main.register') }}">Register</a>
-        </nav>
-        <h1>Welcome to Airline Reservation System</h1>
+        <h1>Welcome to the Airline Reservation System</h1>
     </header>
+    <main class="centered">
+        <p>Select an option below to get started:</p>
+        <div class="button-group">
+            <a class="btn" href="{{ url_for('main.login') }}">Login</a>
+            <a class="btn" href="{{ url_for('main.register') }}">Register</a>
+            <a class="btn" href="{{ url_for('main.list_flights') }}">View Flights</a>
+        </div>
+    </main>
 </body>
 </html>
