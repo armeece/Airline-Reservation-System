@@ -21,6 +21,7 @@ class User(UserMixin):
         self.email = user_data["email"]
         self.password_hash = user_data["password_hash"]
         self.created_at = user_data.get("created_at", datetime.utcnow())
+        self.role = user_data.get("role", "user")  # Default role is 'user'
         self.roles = Role.get_roles_for_user(self.id)
 
     @staticmethod
@@ -35,13 +36,19 @@ class User(UserMixin):
         user_data = users_collection.find_one({"_id": ObjectId(user_id)})
         return User(user_data) if user_data else None
 
+    def is_admin(self):
+        """
+        Helper method to check if the user has an admin role.
+        """
+        return self.role == "admin"
+
 class Flight:
     def __init__(self, flight_data):
         self.id = str(flight_data["_id"])
         self.origin = flight_data["origin"]
         self.destination = flight_data["destination"]
-        self.departure_time = flight_data.get("departureTime") or flight_data.get("departure_time")
-        self.arrival_time = flight_data.get("arrivalTime") or flight_data.get("arrival_time")
+        self.departure_time = flight_data.get("departureTime")
+        self.arrival_time = flight_data.get("arrivalTime")
         self.price = float(flight_data["price"])
         self.capacity = int(flight_data["availableSeats"])
 

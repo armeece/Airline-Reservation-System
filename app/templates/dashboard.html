@@ -23,25 +23,21 @@
                     <tr>
                         <th>Flight</th>
                         <th>Seat</th>
-                        <th>Departure</th>
-                        <th>Arrival</th>
-                        <th>Price</th>
+                        <th>Status</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for booking in bookings %}
-                        <tr>
-                            <td>{{ booking.flight.origin }} to {{ booking.flight.destination }}</td>
-                            <td>{{ booking.seat_number }}</td>
-                            <td>{{ booking.flight.departure_time }}</td>
-                            <td>{{ booking.flight.arrival_time }}</td>
-                            <td>${{ booking.flight.price }}</td>
-                        </tr>
+                    <tr>
+                        <td>{{ booking.flight['origin'] }} to {{ booking.flight['destination'] }}</td>
+                        <td>{{ booking['seat_number'] }}</td>
+                        <td>{{ booking['payment_status'] }}</td>
+                    </tr>
                     {% endfor %}
                 </tbody>
             </table>
         {% else %}
-            <p>No bookings found.</p>
+            <p>No bookings yet.</p>
         {% endif %}
     </main>
 </body>

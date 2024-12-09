@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registration Success</title>
+    <title>Registration Successful</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
@@ -12,11 +12,11 @@
             <a href="{{ url_for('main.home') }}">Home</a>
             <a href="{{ url_for('main.login') }}">Login</a>
         </nav>
-        <h1>Registration Successful</h1>
+        <h1>Registration Successful!</h1>
     </header>
     <main class="centered">
-        <p>Your account has been created successfully.</p>
-        <a class="btn" href="{{ url_for('main.login') }}">Log in here</a>
+        <p>Thank you for registering. You can now log in to your account.</p>
+        <a class="btn" href="{{ url_for('main.login') }}">Go to Login</a>
     </main>
 </body>
 </html>

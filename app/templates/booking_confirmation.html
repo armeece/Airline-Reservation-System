@@ -10,13 +10,13 @@
     <header>
         <nav>
             <a href="{{ url_for('main.home') }}">Home</a>
-            <a href="{{ url_for('main.list_flights') }}">Flights</a>
+            <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
         </nav>
-        <h1>Booking Confirmed!</h1>
+        <h1>Booking Confirmation</h1>
     </header>
     <main>
-        <p>Your booking has been successfully confirmed. You can view it in your dashboard.</p>
-        <a class="btn" href="{{ url_for('main.dashboard') }}">Go to Dashboard</a>
+        <p>Your booking has been successfully made!</p>
+        <a href="{{ url_for('main.dashboard') }}">Go to Dashboard</a>
     </main>
 </body>
 </html>

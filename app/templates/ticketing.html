@@ -16,6 +16,7 @@
     </header>
     <main class="centered">
         <form id="ticketForm" class="form">
+            <input type="hidden" id="_csrf_token" value="{{ session['_csrf_token'] }}">
             <label for="userId">User ID:</label>
             <input type="text" id="userId" placeholder="Enter your User ID" required>
             
@@ -32,6 +33,7 @@
         document.getElementById('ticketForm').addEventListener('submit', async (e) => {
             e.preventDefault();
 
+            const csrfToken = document.getElementById('_csrf_token').value;
             const userId = document.getElementById('userId').value;
             const subject = document.getElementById('subject').value;
             const message = document.getElementById('message').value;
@@ -39,7 +41,8 @@
             const response = await fetch('/api/tickets', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'X-CSRF-Token': csrfToken
                 },
                 body: JSON.stringify({ user_id: userId, subject, message })
             });
