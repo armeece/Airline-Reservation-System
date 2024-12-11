@@ -1,6 +1,7 @@
-from flask import Blueprint, render_template, redirect, url_for, flash
+from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
 from bson.objectid import ObjectId
+from datetime import datetime, timedelta  # Import for date handling
 from app import bcrypt, mongo_db
 from app.forms import LoginForm, RegisterForm, BookingForm, PaymentForm
 import os
@@ -156,8 +157,32 @@ def dashboard():
 @main.route('/flights')
 def list_flights():
     flights_collection = mongo_db.get_collection('flights')
-    flights = list(flights_collection.find({}))
+    
+    # Fetch query parameters
+    origin = request.args.get('origin')
+    destination = request.args.get('destination')
+    date = request.args.get('date')  # Format: YYYY-MM-DD
 
+    # Build query dynamically
+    query = {}
+    if origin:
+        query['origin'] = origin
+    if destination:
+        query['destination'] = destination
+    if date:
+        try:
+            # Convert date string to a range of datetime objects
+            date_obj = datetime.strptime(date, "%Y-%m-%d")
+            next_day = date_obj + timedelta(days=1)
+            query['departureTime'] = {"$gte": date_obj, "$lt": next_day}
+        except ValueError:
+            flash("Invalid date format. Use YYYY-MM-DD.", "error")
+            return redirect(url_for('main.list_flights'))
+
+    # Fetch filtered flights
+    flights = list(flights_collection.find(query))
+
+    # Format the flights for rendering
     formatted_flights = [
         {
             "id": str(flight["_id"]),

@@ -16,6 +16,24 @@
         <h1>Available Flights</h1>
     </header>
     <main>
+        <!-- Filter Form -->
+        <form method="GET" action="{{ url_for('main.list_flights') }}">
+            <div>
+                <label for="origin">Origin:</label>
+                <input type="text" id="origin" name="origin" placeholder="e.g., JFK" value="{{ request.args.get('origin', '') }}">
+            </div>
+            <div>
+                <label for="destination">Destination:</label>
+                <input type="text" id="destination" name="destination" placeholder="e.g., LAX" value="{{ request.args.get('destination', '') }}">
+            </div>
+            <div>
+                <label for="date">Departure Date:</label>
+                <input type="date" id="date" name="date" value="{{ request.args.get('date', '') }}">
+            </div>
+            <button type="submit">Apply Filters</button>
+        </form>
+
+        <!-- Flights Table -->
         {% if flights %}
             <table>
                 <thead>
@@ -42,7 +60,7 @@
                 </tbody>
             </table>
         {% else %}
-            <p>No flights available at the moment.</p>
+            <p>No flights available matching your criteria.</p>
         {% endif %}
     </main>
 </body>
