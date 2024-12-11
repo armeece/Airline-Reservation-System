@@ -1,6 +1,11 @@
 import random
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta
 from pymongo import MongoClient
+from dotenv import load_dotenv
+import os
+
+# Load environment variables
+load_dotenv()
 
 # MongoDB connection
 client = MongoClient("mongodb+srv://jmase2212:Tafari1214@cluster7.bxmvh.mongodb.net/airline-reservation-system-g7?retryWrites=true&w=majority")
@@ -21,14 +26,13 @@ def generate_random_flights(count=25):
     for _ in range(count):
         origin = random.choice(airports)
         destination = random.choice([a for a in airports if a != origin])
-        departure_time = datetime.now(timezone.utc) + timedelta(days=random.randint(1, 30))
+        departure_time = datetime.utcnow() + timedelta(days=random.randint(1, 30))
         arrival_time = departure_time + timedelta(hours=random.randint(2, 6))
         flight = {
-            "flight_001_id": f"FL{random.randint(1000, 9999)}",
             "origin": origin,
             "destination": destination,
-            "departure_time": departure_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
-            "arrival_time": arrival_time.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "departureTime": departure_time,  # Store as native datetime
+            "arrivalTime": arrival_time,     # Store as native datetime
             "price": round(random.uniform(100, 1000), 2),
             "airline": random.choice(airlines),
             "availableSeats": random.randint(50, 200),

@@ -19,14 +19,27 @@
         <p>Flight: {{ flight.origin }} to {{ flight.destination }}</p>
         <p>Seat Number: {{ seat_number }}</p>
         <p>Price: ${{ "%.2f" | format(flight.price) }}</p>
-        <form action="{{ url_for('main.payment', flight_id=flight['_id'], seat_number=seat_number) }}" method="POST">
+        <form action="{{ url_for('main.payment', flight_id=flight._id, seat_number=seat_number) }}" method="POST">
             {{ form.hidden_tag() }}
+        
             <label for="card_number">Card Number:</label>
-            {{ form.card_number(class="form-control", id="card_number") }}
+            {{ form.card_number(id="card_number", class="form-control", required=True) }}
+            {% if form.card_number.errors %}
+                <span class="error-message">{{ form.card_number.errors[0] }}</span>
+            {% endif %}
+        
             <label for="expiry_date">Expiry Date:</label>
-            {{ form.expiry_date(class="form-control", id="expiry_date") }}
+            {{ form.expiry_date(id="expiry_date", class="form-control", required=True) }}
+            {% if form.expiry_date.errors %}
+                <span class="error-message">{{ form.expiry_date.errors[0] }}</span>
+            {% endif %}
+        
             <label for="cvv">CVV:</label>
-            {{ form.cvv(class="form-control", id="cvv") }}
+            {{ form.cvv(id="cvv", class="form-control", required=True) }}
+            {% if form.cvv.errors %}
+                <span class="error-message">{{ form.cvv.errors[0] }}</span>
+            {% endif %}
+        
             <button type="submit">Submit Payment</button>
         </form>
     </main>

@@ -21,23 +21,24 @@ class PaymentForm(FlaskForm):
     card_number = StringField(
         "Card Number",
         validators=[
-            DataRequired(),
-            Length(min=16, max=16),
-            Regexp(r"^\d{16}$", message="Invalid card number"),
+            DataRequired(message="Card Number is required."),
+            Length(min=16, max=16, message="Card Number must be 16 digits."),
+            Regexp(r"^\d{16}$", message="Card Number must contain only digits."),
         ],
     )
     expiry_date = StringField(
-        "Expiry Date",
+        "Expiry Date (MM/YY)",
         validators=[
-            DataRequired(),
-            Regexp(r"^(0[1-9]|1[0-2])/[0-9]{2}$", message="Invalid expiry date format (MM/YY)"),
+            DataRequired(message="Expiry Date is required."),
+            Regexp(r"^(0[1-9]|1[0-2])/[0-9]{2}$", message="Invalid Expiry Date format. Use MM/YY."),
         ],
     )
     cvv = StringField(
         "CVV",
         validators=[
-            DataRequired(),
-            Length(min=3, max=3),
-            Regexp(r"^\d{3}$", message="Invalid CVV"),
+            DataRequired(message="CVV is required."),
+            Length(min=3, max=3, message="CVV must be 3 digits."),
+            Regexp(r"^\d{3}$", message="CVV must contain only digits."),
         ],
     )
+    submit = SubmitField("Submit Payment")

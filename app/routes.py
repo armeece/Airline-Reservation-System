@@ -4,6 +4,32 @@ from bson.objectid import ObjectId
 from app import bcrypt, mongo_db
 from app.forms import LoginForm, RegisterForm, BookingForm, PaymentForm
 import os
+import random  # Import for randomizing payment success or failure
+
+# Utility Function for Payment Processing
+def mock_payment_gateway(card_number, expiry_date, cvv):
+    """
+    Simulates a payment gateway for processing payments.
+    Args:
+        card_number (str): Credit card number
+        expiry_date (str): Expiry date in MM/YY format
+        cvv (str): CVV code (3 digits)
+
+    Returns:
+        dict: A dictionary containing success status and a message.
+    """
+    # Validate card details
+    if len(card_number) != 16 or not card_number.isdigit():
+        return {"success": False, "message": "Invalid card number."}
+    if not expiry_date or not cvv or len(cvv) != 3 or not cvv.isdigit():
+        return {"success": False, "message": "Invalid card details."}
+    
+    # Simulate success or failure
+    success = random.choice([True, False])  # Randomize success or failure
+    return {
+        "success": success,
+        "message": "Payment successful!" if success else "Payment failed. Insufficient funds.",
+    }
 
 # Blueprint Declaration
 main = Blueprint('main', __name__)
@@ -197,17 +223,33 @@ def payment(flight_id, seat_number):
     flights_collection = mongo_db.get_collection('flights')
 
     try:
+        # Fetch the flight details
         flight = flights_collection.find_one({"_id": ObjectId(flight_id)})
         if not flight:
             flash('Flight not found.', 'error')
             return redirect(url_for('main.list_flights'))
 
-        flight["_id"] = str(flight["_id"])  # Convert for template usage
+        # Convert flight ID for template usage
+        flight["_id"] = str(flight["_id"])
 
         if form.validate_on_submit():
+            # Extract payment details from form
+            card_number = form.card_number.data
+            expiry_date = form.expiry_date.data
+            cvv = form.cvv.data
+
+            # Simulate payment processing
+            payment_result = mock_payment_gateway(card_number, expiry_date, cvv)
+
+            # Handle payment failure
+            if not payment_result["success"]:
+                flash(payment_result["message"], "error")
+                return render_template('payment.html', flight=flight, seat_number=seat_number, form=form)
+
+            # Payment success: Update booking with confirmation
             bookings_collection = mongo_db.get_collection('bookings')
             booking = bookings_collection.find_one({
-                "user_id": current_user.id,
+                "user_id": ObjectId(current_user.id),
                 "flight_id": ObjectId(flight_id),
                 "seat_number": seat_number
             })
@@ -216,12 +258,15 @@ def payment(flight_id, seat_number):
                 flash("Booking not found.", "error")
                 return redirect(url_for('main.dashboard'))
 
-            # Update booking with payment confirmation
             bookings_collection.update_one(
-                {"user_id": current_user.id, "flight_id": ObjectId(flight_id), "seat_number": seat_number},
+                {
+                    "user_id": ObjectId(current_user.id),
+                    "flight_id": ObjectId(flight_id),
+                    "seat_number": seat_number
+                },
                 {"$set": {"payment_status": "Confirmed"}}
             )
-            flash('Payment successful!', 'success')
+            flash(payment_result["message"], "success")
             return redirect(url_for('main.payment_success'))
 
     except Exception as e:
