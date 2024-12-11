@@ -157,18 +157,21 @@ def dashboard():
 @main.route('/flights')
 def list_flights():
     flights_collection = mongo_db.get_collection('flights')
-    
+
     # Fetch query parameters
     origin = request.args.get('origin')
     destination = request.args.get('destination')
     date = request.args.get('date')  # Format: YYYY-MM-DD
+    travel_class = request.args.get('class')  # Economy, Business, First
+    min_price = request.args.get('min_price')
+    max_price = request.args.get('max_price')
 
     # Build query dynamically
     query = {}
     if origin:
-        query['origin'] = origin
+        query['origin'] = {"$regex": origin, "$options": "i"}  # Case-insensitive partial match
     if destination:
-        query['destination'] = destination
+        query['destination'] = {"$regex": destination, "$options": "i"}  # Case-insensitive partial match
     if date:
         try:
             # Convert date string to a range of datetime objects
@@ -178,6 +181,23 @@ def list_flights():
         except ValueError:
             flash("Invalid date format. Use YYYY-MM-DD.", "error")
             return redirect(url_for('main.list_flights'))
+    if travel_class:
+        query['class'] = travel_class
+    if min_price or max_price:
+        price_query = {}
+        if min_price:
+            try:
+                price_query["$gte"] = float(min_price)
+            except ValueError:
+                flash("Invalid minimum price.", "error")
+                return redirect(url_for('main.list_flights'))
+        if max_price:
+            try:
+                price_query["$lte"] = float(max_price)
+            except ValueError:
+                flash("Invalid maximum price.", "error")
+                return redirect(url_for('main.list_flights'))
+        query['price'] = price_query
 
     # Fetch filtered flights
     flights = list(flights_collection.find(query))
@@ -191,6 +211,7 @@ def list_flights():
             "departure_time": flight.get("departureTime", "TBD"),
             "arrival_time": flight.get("arrivalTime", "TBD"),
             "price": float(flight.get("price", 0)),
+            "class": flight.get("class", "Unknown"),
         }
         for flight in flights
     ]
