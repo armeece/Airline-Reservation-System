@@ -13,31 +13,47 @@
             <a href="{{ url_for('main.list_flights') }}">Flights</a>
             <a href="{{ url_for('main.logout') }}">Logout</a>
         </nav>
-        <h1>Welcome, {{ user.name }}</h1>
+        <h1>Dashboard</h1>
     </header>
     <main>
-        <h2>Your Bookings</h2>
         {% if bookings %}
+            <h2>Your Bookings</h2>
             <table>
                 <thead>
                     <tr>
-                        <th>Flight</th>
-                        <th>Seat</th>
-                        <th>Status</th>
+                        <th>Origin</th>
+                        <th>Destination</th>
+                        <th>Departure Time</th>
+                        <th>Arrival Time</th>
+                        <th>Price</th>
+                        <th>Seat Number</th>
+                        <th>Payment Status</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for booking in bookings %}
-                    <tr>
-                        <td>{{ booking.flight['origin'] }} to {{ booking.flight['destination'] }}</td>
-                        <td>{{ booking['seat_number'] }}</td>
-                        <td>{{ booking['payment_status'] }}</td>
-                    </tr>
+                        <tr>
+                            <td>{{ booking.flight.origin }}</td>
+                            <td>{{ booking.flight.destination }}</td>
+                            <td>{{ booking.flight.departure_time }}</td>
+                            <td>{{ booking.flight.arrival_time }}</td>
+                            <td>${{ "%.2f"|format(booking.flight.price) }}</td>
+                            <td>{{ booking.seat_number }}</td>
+                            <td>
+                                {% if booking.payment_status == "Pending" %}
+                                    <span style="color: orange;">Pending</span>
+                                {% elif booking.payment_status == "Confirmed" %}
+                                    <span style="color: green;">Confirmed</span>
+                                {% else %}
+                                    <span style="color: red;">{{ booking.payment_status }}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
                     {% endfor %}
                 </tbody>
             </table>
         {% else %}
-            <p>No bookings yet.</p>
+            <p>No bookings found.</p>
         {% endif %}
     </main>
 </body>

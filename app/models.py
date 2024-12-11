@@ -21,7 +21,7 @@ class User(UserMixin):
         self.email = user_data["email"]
         self.password_hash = user_data["password_hash"]
         self.created_at = user_data.get("created_at", datetime.utcnow())
-        self.role = user_data.get("role", "user")  # Default role is 'user'
+        self.role = user_data.get("role", "user")
         self.roles = Role.get_roles_for_user(self.id)
 
     @staticmethod
@@ -37,9 +37,6 @@ class User(UserMixin):
         return User(user_data) if user_data else None
 
     def is_admin(self):
-        """
-        Helper method to check if the user has an admin role.
-        """
         return self.role == "admin"
 
 class Flight:

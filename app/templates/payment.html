@@ -19,14 +19,14 @@
         <p>Flight: {{ flight.origin }} to {{ flight.destination }}</p>
         <p>Seat Number: {{ seat_number }}</p>
         <p>Price: ${{ "%.2f" | format(flight.price) }}</p>
-        <form action="{{ url_for('main.payment', flight_id=flight.id, seat_number=seat_number) }}" method="POST">
-            <input type="hidden" name="_csrf_token" value="{{ session['_csrf_token'] }}">
+        <form action="{{ url_for('main.payment', flight_id=flight['_id'], seat_number=seat_number) }}" method="POST">
+            {{ form.hidden_tag() }}
             <label for="card_number">Card Number:</label>
-            <input type="text" id="card_number" name="card_number" required>
+            {{ form.card_number(class="form-control", id="card_number") }}
             <label for="expiry_date">Expiry Date:</label>
-            <input type="text" id="expiry_date" name="expiry_date" required>
+            {{ form.expiry_date(class="form-control", id="expiry_date") }}
             <label for="cvv">CVV:</label>
-            <input type="text" id="cvv" name="cvv" required>
+            {{ form.cvv(class="form-control", id="cvv") }}
             <button type="submit">Submit Payment</button>
         </form>
     </main>

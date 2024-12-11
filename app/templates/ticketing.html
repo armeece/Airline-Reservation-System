@@ -16,7 +16,7 @@
     </header>
     <main class="centered">
         <form id="ticketForm" class="form">
-            <input type="hidden" id="_csrf_token" value="{{ session['_csrf_token'] }}">
+            {{ form.hidden_tag() }}
             <label for="userId">User ID:</label>
             <input type="text" id="userId" placeholder="Enter your User ID" required>
             

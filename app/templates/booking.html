@@ -25,16 +25,9 @@
                 <p><strong>Price:</strong> ${{ "%.2f" | format(flight.price) }}</p>
             </section>
             <form action="{{ url_for('main.book_flight', flight_id=flight.id) }}" method="POST">
-                <input type="hidden" name="_csrf_token" value="{{ session['_csrf_token'] }}">
+                {{ form.hidden_tag() }}
                 <label for="seat_number">Seat Number:</label>
-                <input 
-                    type="text" 
-                    id="seat_number" 
-                    name="seat_number" 
-                    pattern="\d+" 
-                    title="Please enter a valid seat number (numbers only)" 
-                    required
-                >
+                {{ form.seat_number(class="form-control", id="seat_number", required=True) }}
                 <button type="submit">Book Now</button>
             </form>
         {% else %}

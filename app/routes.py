@@ -1,8 +1,8 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
+from flask import Blueprint, render_template, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required, current_user
 from bson.objectid import ObjectId
 from app import bcrypt, mongo_db
-from app.decorators import role_required
+from app.forms import LoginForm, RegisterForm, BookingForm, PaymentForm
 import os
 
 # Blueprint Declaration
@@ -37,12 +37,6 @@ class MongoUser:
         user_data = user_collection.find_one({"_id": ObjectId(user_id)})
         return MongoUser(user_data) if user_data else None
 
-# Ensure CSRF token setup before requests
-@main.before_request
-def ensure_csrf_token():
-    if '_csrf_token' not in session:
-        session['_csrf_token'] = os.urandom(24).hex()
-
 # Routes Implementation
 @main.route('/')
 def home():
@@ -50,44 +44,35 @@ def home():
 
 @main.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        print("Submitted Data:", request.form)
-        print("Session CSRF Token:", session.get('_csrf_token'))
-        email = request.form.get('email')
-        password = request.form.get('password')
-        csrf_token = request.form.get('_csrf_token')
-
-        if not csrf_token or csrf_token != session.get('_csrf_token'):
-            flash('Invalid CSRF token.', 'error')
-            return redirect(url_for('main.login'))
-
+    form = LoginForm()
+    if form.validate_on_submit():
+        email = form.email.data
+        password = form.password.data
         user_collection = mongo_db.get_collection('users')
         user = user_collection.find_one({"email": email})
-        if not user or not bcrypt.check_password_hash(user['password_hash'], password):
-            flash('Invalid email or password.', 'error')
-            return redirect(url_for('main.login'))
 
-        login_user(MongoUser(user))
-        flash('Welcome back!', 'success')
-        return redirect(url_for('main.dashboard'))
-    return render_template('login.html')
+        if user and bcrypt.check_password_hash(user['password_hash'], password):
+            login_user(MongoUser(user))
+            flash('Welcome back!', 'success')
+            return redirect(url_for('main.dashboard'))
+        else:
+            flash('Invalid email or password.', 'error')
+
+    return render_template('login.html', form=form)
 
 @main.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'POST':
-        name = request.form.get('name')
-        email = request.form.get('email')
-        password = request.form.get('password')
-        csrf_token = request.form.get('_csrf_token')
-
-        if not csrf_token or csrf_token != session.get('_csrf_token'):
-            flash('Invalid CSRF token.', 'error')
-            return redirect(url_for('main.register'))
-
+    form = RegisterForm()
+    if form.validate_on_submit():
+        name = form.name.data
+        email = form.email.data
+        password = form.password.data
         user_collection = mongo_db.get_collection('users')
+
         if user_collection.find_one({"email": email}):
             flash('Email is already registered. Please log in.', 'error')
             return redirect(url_for('main.register'))
+
         hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
         user_collection.insert_one({
             "name": name,
@@ -95,9 +80,10 @@ def register():
             "password_hash": hashed_password,
             "role": "user"
         })
+
         flash('Account created successfully! Please log in.', 'success')
         return redirect(url_for('main.registration_success'))
-    return render_template('register.html')
+    return render_template('register.html', form=form)
 
 @main.route('/register/success')
 def registration_success():
@@ -109,24 +95,37 @@ def dashboard():
     bookings_collection = mongo_db.get_collection('bookings')
     flights_collection = mongo_db.get_collection('flights')
 
-    user_bookings = bookings_collection.find({'user_id': ObjectId(current_user.id)})
+    # Ensure `current_user.id` is converted to ObjectId
+    user_id = ObjectId(current_user.id)
+
+    # Query all bookings for the current user
+    user_bookings = bookings_collection.find({'user_id': user_id})
+
+    # Enrich bookings with flight details
     enriched_bookings = []
     for booking in user_bookings:
         flight = flights_collection.find_one({"_id": ObjectId(booking["flight_id"])})
-        enriched_booking = {
-            "seat_number": booking["seat_number"],
-            "payment_status": booking["payment_status"],
-            "flight": {
-                "origin": flight.get("origin", "Unknown"),
-                "destination": flight.get("destination", "Unknown"),
-                "departureTime": flight.get("departureTime", "TBD"),
-                "arrivalTime": flight.get("arrivalTime", "TBD"),
-                "price": flight.get("price", "0"),
-            } if flight else None
-        }
-        enriched_bookings.append(enriched_booking)
+        if flight:
+            enriched_bookings.append({
+                "seat_number": booking["seat_number"],
+                "payment_status": booking["payment_status"],
+                "flight": {
+                    "origin": flight.get("origin", "Unknown"),
+                    "destination": flight.get("destination", "Unknown"),
+                    "departure_time": flight.get("departureTime", "TBD"),
+                    "arrival_time": flight.get("arrivalTime", "TBD"),
+                    "price": float(flight.get("price", 0)),
+                }
+            })
 
-    return render_template('dashboard.html', bookings=enriched_bookings, user=current_user)
+    # Debug log
+    print("Enriched Bookings for Dashboard:", enriched_bookings)
+
+    return render_template(
+        'dashboard.html',
+        bookings=enriched_bookings,
+        user=current_user
+    )
 
 @main.route('/flights')
 def list_flights():
@@ -150,38 +149,38 @@ def list_flights():
 @main.route('/book/<flight_id>', methods=['GET', 'POST'])
 @login_required
 def book_flight(flight_id):
+    form = BookingForm()
     flights_collection = mongo_db.get_collection('flights')
-    flight = flights_collection.find_one({"_id": ObjectId(flight_id)})
+    bookings_collection = mongo_db.get_collection('bookings')
 
+    # Fetch the flight by ID
+    flight = flights_collection.find_one({"_id": ObjectId(flight_id)})
     if not flight:
         flash('Flight not found.', 'error')
         return redirect(url_for('main.list_flights'))
 
-    if request.method == 'POST':
-        seat_number = request.form.get('seat_number')
-        csrf_token = request.form.get('_csrf_token')
+    # Convert `_id` for template usage
+    flight["id"] = str(flight["_id"])
 
-        if not csrf_token or csrf_token != session.get('_csrf_token'):
-            flash('Invalid CSRF token.', 'error')
-            return redirect(url_for('main.book_flight', flight_id=flight_id))
+    if form.validate_on_submit():
+        seat_number = form.seat_number.data
 
-        if not seat_number or not seat_number.isdigit():
-            flash('Please select a valid seat number.', 'error')
-            return redirect(url_for('main.book_flight', flight_id=flight_id))
+        # Ensure `current_user.id` is an `ObjectId`
+        user_id = ObjectId(current_user.id)
 
-        bookings_collection = mongo_db.get_collection('bookings')
+        # Check if the seat is already booked
         existing_booking = bookings_collection.find_one({
-            "flight_id": flight_id,
+            "flight_id": ObjectId(flight_id),
             "seat_number": seat_number
         })
-
         if existing_booking:
             flash("Seat is already booked. Please choose another seat.", "error")
             return redirect(url_for('main.book_flight', flight_id=flight_id))
 
+        # Insert new booking
         bookings_collection.insert_one({
-            "user_id": current_user.id,
-            "flight_id": flight_id,
+            "user_id": user_id,
+            "flight_id": ObjectId(flight_id),
             "seat_number": seat_number,
             "payment_status": "Pending"
         })
@@ -189,48 +188,46 @@ def book_flight(flight_id):
         flash("Booking successful! Please proceed to payment.", "success")
         return redirect(url_for('main.payment', flight_id=flight_id, seat_number=seat_number))
 
-    return render_template('booking.html', flight={
-        "id": str(flight["_id"]),
-        "origin": flight.get("origin"),
-        "destination": flight.get("destination"),
-        "departure_time": flight.get("departureTime"),
-        "arrival_time": flight.get("arrivalTime"),
-        "price": flight.get("price"),
-    })
+    return render_template('booking.html', flight=flight, form=form)
 
 @main.route('/payment/<flight_id>/<seat_number>', methods=['GET', 'POST'])
 @login_required
 def payment(flight_id, seat_number):
+    form = PaymentForm()
     flights_collection = mongo_db.get_collection('flights')
-    flight = flights_collection.find_one({"_id": ObjectId(flight_id)})
 
-    if not flight:
-        flash('Flight not found.', 'error')
-        return redirect(url_for('main.list_flights'))
+    try:
+        flight = flights_collection.find_one({"_id": ObjectId(flight_id)})
+        if not flight:
+            flash('Flight not found.', 'error')
+            return redirect(url_for('main.list_flights'))
 
-    if request.method == 'POST':
-        csrf_token = request.form.get('_csrf_token')
-        if not csrf_token or csrf_token != session.get('_csrf_token'):
-            flash('Invalid CSRF token.', 'error')
-            return redirect(url_for('main.payment', flight_id=flight_id, seat_number=seat_number))
+        flight["_id"] = str(flight["_id"])  # Convert for template usage
 
-        card_number = request.form.get('card_number')
-        expiration_date = request.form.get('expiry_date')
-        cvv = request.form.get('cvv')
+        if form.validate_on_submit():
+            bookings_collection = mongo_db.get_collection('bookings')
+            booking = bookings_collection.find_one({
+                "user_id": current_user.id,
+                "flight_id": ObjectId(flight_id),
+                "seat_number": seat_number
+            })
 
-        if not card_number or not expiration_date or not cvv:
-            flash('Please provide valid payment details.', 'error')
-            return render_template('payment.html', flight=flight, seat_number=seat_number)
+            if not booking:
+                flash("Booking not found.", "error")
+                return redirect(url_for('main.dashboard'))
 
-        bookings_collection = mongo_db.get_collection('bookings')
-        bookings_collection.update_one(
-            {"user_id": current_user.id, "flight_id": flight_id, "seat_number": seat_number},
-            {"$set": {"payment_status": "Confirmed"}}
-        )
-        flash('Payment successful!', 'success')
-        return redirect(url_for('main.payment_success'))
+            # Update booking with payment confirmation
+            bookings_collection.update_one(
+                {"user_id": current_user.id, "flight_id": ObjectId(flight_id), "seat_number": seat_number},
+                {"$set": {"payment_status": "Confirmed"}}
+            )
+            flash('Payment successful!', 'success')
+            return redirect(url_for('main.payment_success'))
 
-    return render_template('payment.html', flight=flight, seat_number=seat_number)
+    except Exception as e:
+        flash(f"An error occurred during payment processing: {e}", "error")
+
+    return render_template('payment.html', flight=flight, seat_number=seat_number, form=form)
 
 @main.route('/payment/success')
 @login_required
