@@ -1,5 +1,7 @@
 import os
-from app import app
+from app import create_app
+
+app = create_app()  # Create the app instance using the factory function
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
