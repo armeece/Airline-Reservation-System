@@ -89,6 +89,7 @@ def flight_details(flight_id):
 
 # Updated Routes for Seat Selection (Author: James Mason)
 @main.route('/flight/<flight_id>/select-seat', methods=['GET'])
+@login_required
 def seat_selection_page(flight_id):
     """
     Render the seat selection page for the specified flight.
@@ -100,47 +101,61 @@ def seat_selection_api(flight_id):
     """
     API for fetching and booking seats for a flight.
     - GET: Return seat map and flight details.
-    - POST: Book a selected seat.
-
-    Author: James Mason (Updated 2024-12-15)
+    - POST: Book a selected seat (simplified, no availability check).
     """
+    # Check MongoDB connection
     if not mongo_db:
         return jsonify({"error": "Database connection not established"}), 500
 
+    # Fetch flight details
     flight = mongo_db.flights.find_one({"_id": ObjectId(flight_id)})
     if not flight:
         return jsonify({"error": "Flight not found"}), 404
 
     if request.method == 'POST':
         data = request.json
+        print(f"Received POST Data: {data}")  # Log the data received from frontend
+
         selected_seat_number = data.get("seat_number")
-        user_id = current_user.id  # Fetch logged-in user ID
+
+        # Validate seat number
         if not selected_seat_number:
-            return jsonify({"error": "seat_number is required"}), 400
+            print("Error: Seat number is missing")
+            return jsonify({"error": "Seat number is required"}), 400
 
-        seat = next((s for s in flight.get("seats", []) if s["seat_number"] == selected_seat_number), None)
-        if seat and seat["is_available"]:
-            mongo_db.flights.update_one(
-                {"_id": ObjectId(flight_id), "seats.seat_number": selected_seat_number},
-                {"$set": {"seats.$.is_available": False}}
-            )
-            booking = {
-                "user_id": user_id,
-                "flight_id": flight_id,
-                "seat_number": selected_seat_number,
-                "status": "active",
-                "timestamp": datetime.utcnow(),
-                "price": flight.get("price", 0)
-            }
-            mongo_db.bookings.insert_one(booking)
-            return jsonify({"message": f"Seat {selected_seat_number} booked successfully!"}), 200
-        else:
-            return jsonify({"error": "Seat not available"}), 400
+        selected_seat_number = selected_seat_number.strip()
+        user_id = str(current_user.id)
+        print(f"Attempting to book seat {selected_seat_number} for user {user_id} on flight {flight_id}")
 
+        # Check for duplicate booking
+        bookings_collection = mongo_db.get_collection('bookings')
+        existing_booking = bookings_collection.find_one({
+            "flight_id": ObjectId(flight_id),
+            "seat_number": selected_seat_number,
+        })
+        if existing_booking:
+            print(f"Error: Seat {selected_seat_number} is already booked")
+            return jsonify({"error": "Seat is already booked"}), 400
+
+        # Insert booking
+        booking = {
+            "user_id": user_id,
+            "flight_id": ObjectId(flight_id),
+            "seat_number": selected_seat_number,
+            "status": "active",
+            "timestamp": datetime.utcnow(),
+            "price": flight.get("price", 0)
+        }
+        bookings_collection.insert_one(booking)
+        print(f"Seat {selected_seat_number} booked successfully for user {user_id}")
+
+        return jsonify({"message": f"Seat {selected_seat_number} booked successfully!"}), 200
+
+    # GET: Return flight and seat information
     return jsonify({
         "flight_id": str(flight["_id"]),
-        "origin": flight["origin"],
-        "destination": flight["destination"],
+        "origin": flight.get("origin"),
+        "destination": flight.get("destination"),
         "seats": flight.get("seats", [])
     }), 200
 

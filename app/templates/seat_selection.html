@@ -69,9 +69,8 @@
     <div class="plane" id="planeContainer"></div>
     <button id="confirmButton" disabled>Confirm Selection</button>
 
-    <!-- Pass flight_id dynamically to JS -->
     <script>
-        const flightId = "{{ flight_id }}";  // Rendered dynamically by Flask
+        const flightId = "{{ flight_id }}";
     </script>
     <script src="/static/seat_selection.js"></script>
 </body>

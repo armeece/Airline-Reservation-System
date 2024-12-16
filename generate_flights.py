@@ -4,7 +4,7 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
 
-# Load environment variables
+# Load environment variables (optional if credentials are stored locally)
 load_dotenv()
 
 # MongoDB connection
@@ -18,10 +18,20 @@ airports = [
     "San Francisco (SFO)", "Seattle (SEA)", "Houston (IAH)", "Atlanta (ATL)"
 ]
 airlines = ["Delta Airlines", "American Airlines", "United Airlines", "Southwest Airlines"]
-classes = ["Economy", "Business", "First"]
+
+# Generate seat data
+def generate_seat_data():
+    seats = []
+    # First Class (1-10)
+    seats.extend([{"seat_number": str(i), "seat_class": "First", "is_available": True} for i in range(1, 11)])
+    # Business Class (11-30)
+    seats.extend([{"seat_number": str(i), "seat_class": "Business", "is_available": True} for i in range(11, 31)])
+    # Economy Class (31-60)
+    seats.extend([{"seat_number": str(i), "seat_class": "Economy", "is_available": True} for i in range(31, 61)])
+    return seats
 
 # Function to generate random flights
-def generate_random_flights(count=25):
+def generate_random_flights(count=10):
     flights = []
     for _ in range(count):
         origin = random.choice(airports)
@@ -35,16 +45,22 @@ def generate_random_flights(count=25):
             "arrivalTime": arrival_time,     # Store as native datetime
             "price": round(random.uniform(100, 1000), 2),
             "airline": random.choice(airlines),
-            "availableSeats": random.randint(50, 200),
-            "class": random.choice(classes)
+            "availableSeats": 60,  # Total seats
+            "seats": generate_seat_data()  # Detailed seat data
         }
         flights.append(flight)
     return flights
 
-# Generate and insert flights into MongoDB
+# Clear old flights and insert new ones
 try:
-    flights = generate_random_flights()
-    flights_collection.insert_many(flights)
-    print(f"{len(flights)} flights have been added to MongoDB!")
+    print("Deleting old flight data...")
+    flights_collection.delete_many({})  # Deletes all documents in the collection
+
+    print("Generating new flight data...")
+    new_flights = generate_random_flights(count=10)
+
+    flights_collection.insert_many(new_flights)
+    print(f"{len(new_flights)} flights have been added to MongoDB successfully!")
+
 except Exception as e:
     print(f"An error occurred: {e}")
