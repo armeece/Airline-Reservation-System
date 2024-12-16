@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from flask_login import login_required, current_user
 from bson.objectid import ObjectId
+from datetime import datetime
 from app import mongo_db
 
 seat_selection_blueprint = Blueprint('seat_selection', __name__)
@@ -12,55 +13,55 @@ def get_available_seats(flight_id):
     bookings_collection = mongo_db.get_collection('bookings')
 
     flight = flights_collection.find_one({"_id": ObjectId(flight_id)})
-
     if not flight:
         return jsonify({"error": "Flight not found"}), 404
 
-    total_seats = int(flight.get("availableSeats", 100))
+    seats = flight.get("seats", [])
     booked_seats = bookings_collection.find({"flight_id": flight_id}).distinct("seat_number")
-    available_seats = [seat for seat in range(1, total_seats + 1) if str(seat) not in booked_seats]
 
-    return jsonify({
-        "flight_id": str(flight["_id"]),
-        "total_seats": total_seats,
-        "booked_seats": len(booked_seats),
-        "available_seats": available_seats
-    }), 200
+    for seat in seats:
+        seat["is_available"] = seat["seat_number"] not in booked_seats
 
-@seat_selection_blueprint.route('/seats/select', methods=['POST'])
+    return jsonify({"seats": seats}), 200
+
+@seat_selection_blueprint.route('/seats/<flight_id>/select', methods=['POST'])
 @login_required
-def select_seat():
+def select_seat(flight_id):
     data = request.get_json()
-    booking_id = data.get('booking_id')
-    seat_number = data.get('seat_number')
+    seat_number = data.get("seat_number")
+    user_id = str(current_user.id)
 
-    if not booking_id or not seat_number:
-        return jsonify({"error": "Booking ID and seat number are required"}), 400
+    if not seat_number:
+        return jsonify({"error": "Seat number is required"}), 400
 
+    flights_collection = mongo_db.get_collection('flights')
     bookings_collection = mongo_db.get_collection('bookings')
 
-    booking = bookings_collection.find_one({
-        "_id": ObjectId(booking_id),
-        "user_id": str(current_user.id)
-    })
+    flight = flights_collection.find_one({"_id": ObjectId(flight_id)})
+    if not flight:
+        return jsonify({"error": "Flight not found"}), 404
 
-    if not booking:
-        return jsonify({"error": "Booking not found or unauthorized"}), 404
+    seat = next((s for s in flight.get("seats", []) if s["seat_number"] == seat_number), None)
+    if not seat:
+        return jsonify({"error": "Invalid seat number"}), 400
 
-    existing_seat = bookings_collection.find_one({
-        "flight_id": booking["flight_id"],
-        "seat_number": seat_number
-    })
+    existing_booking = bookings_collection.find_one({"flight_id": flight_id, "seat_number": seat_number})
+    if existing_booking:
+        return jsonify({"error": "Seat is already booked"}), 400
 
-    if existing_seat:
-        return jsonify({"error": "Seat is already taken"}), 400
+    booking = {
+        "user_id": user_id,
+        "flight_id": flight_id,
+        "seat_number": seat_number,
+        "status": "active",
+        "timestamp": datetime.utcnow(),
+        "price": flight.get("price", 0)
+    }
+    bookings_collection.insert_one(booking)
 
-    result = bookings_collection.update_one(
-        {"_id": ObjectId(booking_id)},
-        {"$set": {"seat_number": seat_number}}
+    flights_collection.update_one(
+        {"_id": ObjectId(flight_id), "seats.seat_number": seat_number},
+        {"$set": {"seats.$.is_available": False}}
     )
 
-    if result.modified_count == 0:
-        return jsonify({"error": "Failed to update booking"}), 500
-
-    return jsonify({"message": "Seat selected successfully!"}), 200
+    return jsonify({"message": f"Seat {seat_number} booked successfully!"}), 200

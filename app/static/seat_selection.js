@@ -1,96 +1,68 @@
-// #Dylaan - 11/30: 
-// Updates and improvements by Addison M - 12/04
-
 document.addEventListener("DOMContentLoaded", function () {
-    const seatLayout = document.getElementById("seat-layout");
-    const confirmBtn = document.getElementById("confirm-btn");
+    const planeContainer = document.getElementById("planeContainer");
+    const confirmButton = document.getElementById("confirmButton");
     let selectedSeat = null;
 
-    // Get flight ID from the URL
-    const flightId = new URLSearchParams(window.location.search).get("flight_id");
-
-    if (!flightId) {
-        alert("Flight ID is missing. Unable to load seat layout.");
-        return;
-    }
-
-    // Disable the confirm button initially
-    confirmBtn.disabled = true;
-
-    // Fetch seat availability
-    fetch(`/api/seats/${flightId}`)
-        .then((response) => {
+    // Fetch seat availability for the flight
+    fetch(`/api/seats/${flightId}`)  // Correctly use flightId
+        .then(response => {
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             return response.json();
         })
-        .then((data) => {
+        .then(data => {
             if (data.error) {
                 alert(data.error);
                 return;
             }
 
-            const { total_seats, booked_seats } = data;
-            const rows = Math.ceil(total_seats / 6); // Assuming 6 seats per row (A-F)
-            const reservedSeats = new Set(booked_seats);
+            const { seats } = data;
 
-            // Generate seat layout dynamically
-            for (let row = 1; row <= rows; row++) {
-                const rowDiv = document.createElement("div");
-                rowDiv.className = "row";
+            seats.forEach(seat => {
+                const seatDiv = document.createElement("div");
+                seatDiv.className = "seat";
+                seatDiv.textContent = seat.seat_number;
 
-                for (let col of ["A", "B", "C", "D", "E", "F"]) {
-                    const seatNumber = `${row}${col}`;
-                    const seat = document.createElement("div");
-                    seat.className = "seat";
-                    seat.textContent = seatNumber;
-
-                    if (reservedSeats.has(seatNumber)) {
-                        seat.classList.add("reserved");
-                    } else {
-                        seat.addEventListener("click", () => {
-                            document.querySelectorAll(".seat.selected").forEach((el) => el.classList.remove("selected"));
-                            seat.classList.add("selected");
-                            selectedSeat = seatNumber;
-                            confirmBtn.disabled = false;
-                        });
-                    }
-
-                    rowDiv.appendChild(seat);
+                if (!seat.is_available) {
+                    seatDiv.classList.add("unavailable");
+                } else {
+                    seatDiv.addEventListener("click", () => {
+                        document.querySelectorAll(".seat.selected").forEach(el => el.classList.remove("selected"));
+                        seatDiv.classList.add("selected");
+                        selectedSeat = seat.seat_number;
+                        confirmButton.disabled = false;
+                    });
                 }
 
-                seatLayout.appendChild(rowDiv);
-            }
+                planeContainer.appendChild(seatDiv);
+            });
         })
-        .catch((error) => {
-            console.error("Error fetching seat layout:", error);
-            alert("Failed to load seat layout. Please try again later.");
+        .catch(error => {
+            console.error("Error fetching seat data:", error);
+            alert("Failed to load seat data. Please try again later.");
         });
 
-    // Confirm seat selection
-    confirmBtn.addEventListener("click", () => {
+    // Handle seat confirmation
+    confirmButton.addEventListener("click", () => {
         if (!selectedSeat) {
             alert("No seat selected. Please select a seat before confirming.");
             return;
         }
 
-        fetch("/api/seats/reserve", {
+        fetch(`/api/flights/${flightId}/seats`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ flight_id: flightId, seat_number: selectedSeat }),
+            body: JSON.stringify({ seat_number: selectedSeat }),
         })
-            .then((response) => {
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                return response.json();
-            })
-            .then((data) => {
+            .then(response => response.json())
+            .then(data => {
                 if (data.error) {
                     alert(data.error);
                 } else {
                     alert(`Seat ${selectedSeat} reserved successfully!`);
-                    location.reload();
+                    window.location.href = `/payment/${flightId}/${selectedSeat}`;  // Redirect to payment
                 }
             })
-            .catch((error) => {
+            .catch(error => {
                 console.error("Error reserving seat:", error);
                 alert("Failed to reserve seat. Please try again later.");
             });

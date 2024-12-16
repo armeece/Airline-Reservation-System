@@ -19,12 +19,12 @@ def create_app():
 
     # Flask Configuration
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
-    app.config["WTF_CSRF_SECRET_KEY"] = os.getenv("WTF_CSRF_SECRET_KEY")  # Corrected key
+    app.config["WTF_CSRF_SECRET_KEY"] = os.getenv("WTF_CSRF_SECRET_KEY")
     app.config["SESSION_TYPE"] = "filesystem"
     app.config["SESSION_PERMANENT"] = False
 
     # Validate Required Environment Variables
-    required_env_vars = ["SECRET_KEY", "WTF_CSRF_SECRET_KEY", "MONGO_URI"]  # Corrected key
+    required_env_vars = ["SECRET_KEY", "WTF_CSRF_SECRET_KEY", "MONGO_URI"]
     missing_vars = [var for var in required_env_vars if not os.getenv(var)]
     if missing_vars:
         raise ValueError(f"Missing required environment variables: {', '.join(missing_vars)}")
@@ -58,7 +58,10 @@ def create_app():
 
     # Register Blueprints
     from app.routes import main
+    from app.apis.seat_selection_api import seat_selection_blueprint  # Import the API blueprint
+
     app.register_blueprint(main)
+    app.register_blueprint(seat_selection_blueprint, url_prefix="/api")  # Register with /api prefix
 
     return app
 

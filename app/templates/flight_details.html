@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Details</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="{{ url_for('main.home') }}">Home</a>
+            <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('main.logout') }}">Logout</a>
+        </nav>
+        <h1>Flight Details</h1>
+    </header>
+    <main>
+        <!-- Flight Details Section -->
+        <section>
+            <h2>Flight Information</h2>
+            <p><strong>Origin:</strong> {{ flight.origin }}</p>
+            <p><strong>Destination:</strong> {{ flight.destination }}</p>
+            <p><strong>Departure Time:</strong> {{ flight.departureTime }}</p>
+            <p><strong>Arrival Time:</strong> {{ flight.arrivalTime }}</p>
+            <p><strong>Price:</strong> ${{ "%.2f" | format(flight.price) }}</p>
+        </section>
+
+        <!-- Seat Class Selection -->
+        <section>
+            <h2>Choose Seat Class</h2>
+            <ul>
+                <li>
+                    <strong>Economy Class:</strong> Affordable travel with basic amenities.
+                </li>
+                <li>
+                    <strong>Business Class:</strong> Comfortable seating and premium services.
+                </li>
+                <li>
+                    <strong>First Class:</strong> Luxurious seating with top-tier amenities.
+                </li>
+            </ul>
+            <a href="{{ url_for('main.seat_selection_page', flight_id=flight._id) }}">
+                <button>Proceed to Seat Selection</button>
+            </a>
+        </section>
+    </main>
+</body>
+</html>
